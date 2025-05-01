@@ -174,56 +174,45 @@ function erf(x) {
   return sign * y;
 }
 
-// drawChart 함수 수정 (주석: y축 표시 및 제목 설정)
+// drawChart 함수 수정 (주석: 막대 그래프(히스토그램)로 변경, y축은 예상 인원수)
 function drawChart(mean, stddev, score) {
     const ctx = document.getElementById("chartCanvas").getContext("2d");
-    const currentBands = getGradeBands();
-    const userPercentile = (1 - normalCDF(score, mean, stddev)) * 100;
+    const currentBands = getGradeBands(); // 현재 커스텀 학점 구간 (주석)
+    const population = parseInt(document.getElementById("population").value) || 0; // 전체 인원수 (주석)
 
-    const xPercentiles = [];
-    const yDensityValues = [];
+    const scores = []; // x축: 점수 값 (주석)
+    const estimatedCounts = []; // y축: 해당 점수 구간의 예상 인원수 (주석)
 
-    const xMinScore = Math.max(0, mean - 5 * stddev);
-    const xMaxScore = Math.max(100, mean + 5 * stddev);
-    const scoreStep = (xMaxScore - xMinScore) / 500;
+    // 그래프 x축(점수) 범위 결정 (주석)
+    const xMinScore = Math.floor(Math.max(0, mean - 4 * stddev)); // 최소 점수 (0점 이상, 정수) (주석)
+    const xMaxScore = Math.ceil(Math.max(100, mean + 4 * stddev)); // 최대 점수 (100점 이상, 정수) (주석)
 
-    xPercentiles.length = 0;
-    yDensityValues.length = 0;
-
-    for (let currentScore = xMinScore; currentScore <= xMaxScore; currentScore += scoreStep) {
-        const percentile = (1 - normalCDF(currentScore, mean, stddev)) * 100;
-        const density = normalPDF(currentScore, mean, stddev);
-
-        xPercentiles.push(percentile);
-        yDensityValues.push(density);
+    // 각 점수(정수 단위) 구간별 예상 인원수 계산 (주석)
+    for (let s = xMinScore; s <= xMaxScore; s++) {
+        scores.push(s); // x축 점수 추가 (주석)
+        // 점수 s를 중심으로 하는 1점 구간(s-0.5 ~ s+0.5)의 확률 계산 (주석)
+        const probability = normalCDF(s + 0.5, mean, stddev) - normalCDF(s - 0.5, mean, stddev);
+        // 해당 구간의 예상 인원수 계산 (소수점 나올 수 있음) (주석)
+        const count = probability * population;
+        estimatedCounts.push(count); // y축 예상 인원수 추가 (주석)
     }
 
-    const points = xPercentiles.map((p, i) => ({ x: p, y: yDensityValues[i] }));
-    points.sort((a, b) => a.x - b.x);
-
-    xPercentiles.length = 0;
-    yDensityValues.length = 0;
-    points.forEach(p => {
-        xPercentiles.push(p.x);
-        yDensityValues.push(p.y);
-    });
-
+    // 학점 구간 배경 플러그인 (주석: 점수 기준, 막대 뒤에 그려지도록 beforeDatasetsDraw 사용)
     const bandPlugin = {
-        id: 'gradeBandsPercentile',
-        beforeDatasetsDraw(chart) {
+        id: 'gradeBandsScore', // ID 변경 (주석)
+        beforeDatasetsDraw(chart) { // 막대보다 먼저 그려짐 (주석)
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
             currentBands.forEach(band => {
-                const minPercentile = (1 - normalCDF(band.max, mean, stddev)) * 100;
-                const maxPercentile = (1 - normalCDF(band.min, mean, stddev)) * 100;
-
                 ctx.fillStyle = band.color;
-                const xMinPixel = x.getPixelForValue(minPercentile);
-                const xMaxPixel = x.getPixelForValue(maxPercentile);
+                const xMinPixel = x.getPixelForValue(band.min);
+                const xMaxPixel = x.getPixelForValue(band.max);
                 const chartLeft = x.left;
                 const chartRight = x.right;
 
                 const startPixel = Math.max(xMinPixel, chartLeft);
                 const endPixel = Math.min(xMaxPixel, chartRight);
+                // 주석: 막대 그래프에서는 각 막대의 경계에 맞춰 그리는 것이 더 자연스러울 수 있음
+                // 여기서는 기존 방식 유지 (배경 역할)
                 const width = Math.max(0, endPixel - startPixel);
 
                 if (width > 0) {
@@ -233,11 +222,12 @@ function drawChart(mean, stddev, score) {
         }
     };
 
+    // 내 점수 표시 선 플러그인 (주석: 점수 기준, 막대 위에 그려지도록 afterDatasetsDraw 사용)
     const scoreLinePlugin = {
-        id: 'userPercentileLine',
-        afterDatasetsDraw(chart) {
+        id: 'userScoreLine', // ID 변경 (주석)
+        afterDatasetsDraw(chart) { // 막대보다 나중에 그려짐 (주석)
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-            const xPos = x.getPixelForValue(userPercentile);
+            const xPos = x.getPixelForValue(score); // 사용자의 점수 위치 (주석)
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(xPos, top);
@@ -246,25 +236,28 @@ function drawChart(mean, stddev, score) {
             ctx.lineWidth = 2;
             ctx.stroke();
 
+            // 선 위에 점수 텍스트 표시 (선택 사항) (주석)
             ctx.fillStyle = 'red';
             ctx.textAlign = 'center';
-            ctx.fillText(`${userPercentile.toFixed(3)}%`, xPos, top - 5);
+            ctx.fillText(`내 점수: ${score.toFixed(2)}`, xPos, top - 5); // 선 위에 표시 (주석)
             ctx.restore();
         }
     };
 
+    // 기존 차트 파괴 및 재생성 (주석)
     if (chart) chart.destroy();
     chart = new Chart(ctx, {
-        type: 'line',
+        type: 'bar', // 주석: 차트 타입을 'bar'로 변경
         data: {
-            labels: xPercentiles,
+            labels: scores, // x축 레이블: 점수 (주석)
             datasets: [{
-                label: '상대적 인원 밀도',
-                data: yDensityValues,
-                borderColor: '#3b82f6',
-                borderWidth: 2,
-                fill: false,
-                pointRadius: 0,
+                label: '예상 인원수', // 데이터셋 레이블 변경 (주석)
+                data: estimatedCounts, // y축 데이터: 예상 인원수 (주석)
+                backgroundColor: 'rgba(59, 130, 246, 0.5)', // 막대 색상 (주석)
+                borderColor: 'rgba(59, 130, 246, 1)', // 막대 테두리 색상 (주석)
+                borderWidth: 1,
+                barPercentage: 1.0, // 막대 간격 없애기 (히스토그램처럼) (주석)
+                categoryPercentage: 1.0, // 막대 간격 없애기 (히스토그램처럼) (주석)
             }]
         },
         options: {
@@ -272,55 +265,60 @@ function drawChart(mean, stddev, score) {
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    type: 'linear',
+                    type: 'linear', // 선형 축 (점수) (주석)
+                    offset: false, // 막대가 눈금 사이에 위치하지 않도록 (주석)
                     title: {
                         display: true,
-                        text: '상위 백분율 (%)'
+                        text: '점수' // x축 제목 (주석)
                     },
-                    min: 0,
-                    max: 100,
-                    reverse: false,
+                    min: xMinScore, // 계산된 최소 점수 적용 (주석)
+                    max: xMaxScore, // 계산된 최대 점수 적용 (주석)
                     ticks: {
-                        callback: function (value, index, values) {
-                            return `${Number(value).toFixed(1)}%`;
-                        },
-                        stepSize: 10
+                        stepSize: 5, // 5점 단위 눈금 제안 (가독성) (주석)
+                        // autoSkip: true,
+                        // maxTicksLimit: 20
                     }
                 },
                 y: {
-                    display: true,
+                    display: true, // y축 표시 (주석)
                     title: {
                         display: true,
-                        text: '상대적 인원 밀도'
+                        text: '예상 인원수' // y축 제목 변경 (주석)
                     },
+                    beginAtZero: true, // y축은 0부터 시작 (주석)
                     ticks: {
-                        maxTicksLimit: 6
+                        // 예상 인원수가 정수가 아닐 수 있으므로, 필요시 포맷팅 (주석)
+                        // callback: function(value) { return Number.isInteger(value) ? value : value.toFixed(1); },
+                        maxTicksLimit: 8 // y축 눈금 개수 제한 (주석)
                     }
                 }
             },
             plugins: {
                 legend: {
-                    display: true,
+                    display: true, // 범례 표시 (주석)
                     position: 'top',
                 },
                 tooltip: {
-                    enabled: true,
-                    mode: 'index',
+                    enabled: true, // 툴팁 활성화 (주석)
+                    mode: 'index', // 동일 인덱스(점수)의 모든 데이터 표시 (주석)
                     intersect: false,
                     callbacks: {
+                        // 툴팁 내용 커스터마이즈 (주석)
                         title: function (tooltipItems) {
-                            const percentile = tooltipItems[0].parsed.x;
-                            return `상위 ${percentile.toFixed(3)}%`;
+                            // 툴팁 제목: 점수 구간 (주석)
+                            const score = tooltipItems[0].parsed.x;
+                            return `${(score - 0.5).toFixed(1)} ~ ${(score + 0.5).toFixed(1)}점 구간`;
                         },
                         label: function (tooltipItem) {
-                            const density = tooltipItem.parsed.y;
-                            return `밀도: ${density.toFixed(5)}`;
+                            // 툴팁 내용: 예상 인원수 (주석)
+                            const count = tooltipItem.parsed.y;
+                            return `예상 인원: ${count.toFixed(2)}명`; // 소수점 2자리 (주석)
                         }
                     }
                 }
             }
         },
-        plugins: [bandPlugin, scoreLinePlugin]
+        plugins: [bandPlugin, scoreLinePlugin] // 플러그인 등록 (주석)
     });
 }
 
