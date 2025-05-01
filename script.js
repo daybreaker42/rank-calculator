@@ -314,15 +314,27 @@ function getGradeBands() {
 
 // 기존 getGrade 함수를 커스텀 구간 사용하도록 수정
 function getGrade(score) {
+    // 점수를 백분율로 변환 (percentile은 0.0~1.0 범위의 값)
+    const mean = parseFloat(document.getElementById("mean").value);
+    const stddev = parseFloat(document.getElementById("stddev").value);
+
+    // 백분율 계산 (상위 %)
+    const percentile = (1 - normalCDF(score, mean, stddev)) * 100;
+
+    // 백분율을 기준으로 학점 구간 판단
     const bands = getGradeBands();
     for (const band of bands) {
-        if (score >= band.min && score <= band.max) {
+        // band.min은 상위 백분율 기준이므로 percentile과 직접 비교
+        if (percentile >= band.min && percentile <= band.max) {
             return band.grade;
         }
     }
-    if (bands.length > 0 && score < bands[bands.length - 1].min) {
+
+    // 가장 낮은 구간보다 낮은 경우
+    if (bands.length > 0 && percentile < bands[bands.length - 1].min) {
         return bands[bands.length - 1].grade;
     }
+
     return "N/A";
 }
 
@@ -672,6 +684,6 @@ function calculateAndDraw() {
     🏅 예상 학점: <strong class=\"text-blue-600\">${grade !== "N/A" ? grade : "구간 없음"}</strong>
   `;
 
-    drawChart(mean, stddev, score);
+    // drawChart(mean, stddev, score);
     renderGradeTable(mean, stddev, population);
 }
