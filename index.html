@@ -1,12 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- 파비콘 추가 -->
-<title>예상 학점 계산기</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script src="https://cdn.tailwindcss.com"></script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon"> <!-- 파비콘 추가 -->
+    <title>예상 학점 계산기</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
 <body class="bg-gray-50 min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 md:p-6">
     <h1 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-4">표준분포 학점 계산기</h1>
@@ -68,18 +68,54 @@
     <!-- 학점 구간별 경계값/상위% 표 영역 -->
     <div id="grade-table" class="mt-4 w-full max-w-xs sm:max-w-md md:max-w-xl"></div>
 
-
-    <!-- 주요 백분율 정보 표시 영역 삭제 -->
-    <!-- <div id="percentile-info" class="mt-4 w-full max-w-xs sm:max-w-md md:max-w-xl text-sm">
-                                    </div> -->
-
     <style>
+        /* input 기본 스타일 (주석) */
         .input {
-            /* Tailwind @apply는 빌드 환경에서만 동작하므로, 실제 배포시에는 인라인 클래스를 권장 */
-            @apply border border-gray-300 p-2 rounded w-full;
+            width: 100%;
+            padding: 0.5rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 0.375rem;
+            min-height: 2.5rem;
+            font-size: 1rem;
+        }
+        
+        /* 입력 필드 포커스 스타일 (주석) */
+        .input:focus {
+            outline: none;
+            border-color: transparent;
+            box-shadow: 0 0 0 2px #3B82F6;
+        }
+        
+        /* 버튼 기본 스타일 (주석) */
+        button {
+            transition: all 0.2s;
+        }
+        
+        button:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px #fff, 0 0 0 4px #3B82F6;
+        }
+        
+        /* 모바일에서 터치 영역 확장 (주석) */
+        @media (max-width: 640px) {
+            .input, button:not(.grade-band-row button) {
+                min-height: 3rem;
+                font-size: 1.125rem;
+            }
+            
+            .grade-band-row button {
+                min-width: 2.5rem;
+                min-height: 2.5rem;
+            }
         }
     </style>
-
+    
+    <!-- Footer 추가 -->
+    <footer class="mt-8 pb-4 text-center text-gray-600 text-sm">
+        <p>Made by HanSJ</p>
+        <p>Contact: <a href="mailto:juen12300039@gmail.com"
+                class="text-blue-600 hover:text-blue-800">juen12300039@gmail.com</a></p>
+    </footer>
     <script src="script.js"></script>
 </body>
 </html>

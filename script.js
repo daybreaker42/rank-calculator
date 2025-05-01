@@ -133,33 +133,50 @@ function setupTabNavigation(row) {
             if (e.key === 'Tab') {
                 e.preventDefault();
                 const type = input.dataset.type;
-                const allRows = document.querySelectorAll('.grade-band-row');
                 const allGrades = [...document.querySelectorAll('.grade-band-grade')];
                 const allMins = [...document.querySelectorAll('.grade-band-min')];
 
-                if (type === 'grade') {
-                    // 학점명 입력 중 탭 키: 다음 학점명으로
-                    const currentIndex = allGrades.indexOf(input);
-                    if (currentIndex < allGrades.length - 1) {
-                        allGrades[currentIndex + 1].focus();
-                    } else {
-                        // 마지막 학점명이면 첫 번째 하한선으로
-                        allMins[0].focus();
+                // Shift + Tab일 경우 역방향 이동 (주석)
+                if (e.shiftKey) {
+                    if (type === 'grade') {
+                        const currentIndex = allGrades.indexOf(input);
+                        if (currentIndex > 0) {
+                            allGrades[currentIndex - 1].focus();
+                        } else {
+                            // 첫 번째 학점명에서 Shift+Tab시 마지막 하한선으로 (주석)
+                            allMins[allMins.length - 1].focus();
+                        }
+                    } else if (type === 'min') {
+                        const currentIndex = allMins.indexOf(input);
+                        if (currentIndex > 0) {
+                            allMins[currentIndex - 1].focus();
+                        } else {
+                            // 첫 번째 하한선에서 Shift+Tab시 마지막 학점명으로 (주석)
+                            allGrades[allGrades.length - 1].focus();
+                        }
                     }
-                } else if (type === 'min') {
-                    // 하한선 입력 중 탭 키: 다음 하한선으로
-                    const currentIndex = allMins.indexOf(input);
-                    if (currentIndex < allMins.length - 1) {
-                        allMins[currentIndex + 1].focus();
-                    } else {
-                        // 마지막 하한선이면 첫 번째 학점명으로
-                        allGrades[0].focus();
+                } else {
+                    // 기존 Tab 동작 (주석)
+                    if (type === 'grade') {
+                        const currentIndex = allGrades.indexOf(input);
+                        if (currentIndex < allGrades.length - 1) {
+                            allGrades[currentIndex + 1].focus();
+                        } else {
+                            allMins[0].focus();
+                        }
+                    } else if (type === 'min') {
+                        const currentIndex = allMins.indexOf(input);
+                        if (currentIndex < allMins.length - 1) {
+                            allMins[currentIndex + 1].focus();
+                        } else {
+                            allGrades[0].focus();
+                        }
                     }
                 }
             }
         });
 
-        // 하한선 값 변경 시 자동 정렬 및 하위 구간 조정
+        // 하한선 값 변경 시 자동 정렬 및 하위 구간 조정 (주석)
         if (input.dataset.type === 'min') {
             input.addEventListener('change', () => {
                 const newValue = parseFloat(input.value);
@@ -167,7 +184,6 @@ function setupTabNavigation(row) {
                     const allRows = [...document.querySelectorAll('.grade-band-row')];
                     const currentRowIndex = allRows.findIndex(r => r.contains(input));
 
-                    // 현재 행 이후의 모든 하한선 조정
                     for (let i = currentRowIndex + 1; i < allRows.length; i++) {
                         const minInput = allRows[i].querySelector('.grade-band-min');
                         const currentMin = parseFloat(minInput.value);
@@ -175,7 +191,6 @@ function setupTabNavigation(row) {
                             minInput.value = newValue;
                         }
                     }
-
                     saveSettings();
                 }
             });
