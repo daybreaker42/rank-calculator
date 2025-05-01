@@ -375,13 +375,13 @@ function erfInv(x) {
     return signX * y;
 }
 
-// drawChart 함수 수정 (주석: 정규분포 데이터 생성 로직 수정)
+// drawChart 함수 수정 - 이전 방식의 차트 배경 표시로 수정
 function drawChart(mean, stddev, score) {
     const ctx = document.getElementById("chartCanvas").getContext("2d");
-    const currentBands = getGradeBands();
-    const population = parseInt(document.getElementById("population").value) || 0;
+    const currentBands = getGradeBands(); // 현재 커스텀 학점 구간
+    const population = parseInt(document.getElementById("population").value) || 0; // 전체 인원수
 
-    // showPercentile을 showChartType 변수 기반으로 결정 (주석)
+    // showPercentile 변수는 유지 (토글 기능)
     const showPercentile = showChartType === 'percentile';
 
     // 데이터 생성
@@ -400,51 +400,47 @@ function drawChart(mean, stddev, score) {
         });
     }
 
-    // X축 데이터 설정 (주석: 토글 상태에 따라 점수 또는 백분율 사용)
+    // X축 데이터 설정 (토글 상태에 따라 점수 또는 백분율 사용)
     const labels = data.map(d => showPercentile ? d.percentile : d.score);
     const chartData = data.map(d => d.count);
 
-    // 학점 구간 배경 플러그인 수정 (주석: 구간별 정보 테이블과 동일한 로직 적용)
+    // 학점 구간 배경 플러그인 (수정: 간소화하여 이전 방식으로 변경)
     const bandPlugin = {
         id: 'gradeBands',
         beforeDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
 
-            currentBands.forEach((band, index) => {
+            currentBands.forEach(band => {
                 ctx.fillStyle = band.color;
+
+                // 해당 구간의 x 위치 계산 (모드에 따라 다름)
                 let xMin, xMax, bandLabel;
 
-                // 학점 구간별 정보와 동일한 로직으로 백분율 계산 (주석)
-                const topPercentile = 100 - band.min; // 입력값에서 상위 백분율로 변환 (예: 90 -> 상위 10%)
-                const nextTopPercentile = index === currentBands.length - 1 ? 100 : (100 - currentBands[index + 1].min);
-
-                // 백분율을 기반으로 실제 점수 계산 (주석)
-                const p1 = topPercentile / 100; // 0~1 범위로 변환
-                const p2 = nextTopPercentile / 100;
-
-                // 역정규분포를 사용하여 점수 계산 (주석)
-                const score1 = mean + stddev * Math.sqrt(2) * erfInv(1 - 2 * p1); // 하한 점수
-                const score2 = mean + stddev * Math.sqrt(2) * erfInv(1 - 2 * p2); // 상한 점수
-
                 if (showPercentile) {
-                    // 백분율 모드: 백분율 기준으로 구간 표시 (주석)
-                    xMin = x.getPixelForValue(topPercentile);
-                    xMax = x.getPixelForValue(nextTopPercentile);
-                    bandLabel = `${band.grade} (${Math.round(score1)}점~${Math.round(score2)}점)`;
+                    // 백분율 모드: 상위 백분율 기준으로 표시
+                    const topPercentile = 100 - band.min;
+                    const nextTopPercentile = band.max === 100 ? 0 : (100 - band.max);
+
+                    xMin = x.getPixelForValue(nextTopPercentile);
+                    xMax = x.getPixelForValue(topPercentile);
+                    bandLabel = `${band.grade} (${band.min}점~${band.max}점)`;
                 } else {
-                    // 점수 모드: 실제 점수 기준으로 구간 표시 (주석)
-                    xMin = x.getPixelForValue(score1);
-                    xMax = x.getPixelForValue(score2);
-                    bandLabel = `${band.grade} (상위 ${topPercentile.toFixed(1)}%)`;
+                    // 점수 모드: 실제 점수 기준으로 표시
+                    xMin = x.getPixelForValue(band.min);
+                    xMax = x.getPixelForValue(band.max);
+                    const percentile = (1 - normalCDF(band.min, mean, stddev)) * 100;
+                    bandLabel = `${band.grade} (상위 ${percentile.toFixed(1)}%)`;
                 }
 
-                const width = Math.abs(xMax - xMin); // 가로 너비 절대값 계산 (주석)
+                // 너비 계산 및 음수 너비 처리
+                const width = Math.abs(xMax - xMin);
+
                 if (width > 0) {
-                    // X 좌표 순서 보정 (주석)
+                    // 시작점 조정 (왼쪽 좌표가 작은 값을 선택)
                     const displayMin = Math.min(xMin, xMax);
                     ctx.fillRect(displayMin, top, width, bottom - top);
 
-                    // 구간 레이블 표시 (주석)
+                    // 구간 레이블 표시
                     ctx.save();
                     ctx.fillStyle = 'rgba(0,0,0,0.7)';
                     ctx.font = '12px Arial';
@@ -458,12 +454,12 @@ function drawChart(mean, stddev, score) {
         }
     };
 
-    // 내 점수 표시 선 플러그인 수정 (주석: 점수와 백분율 동시 표시)
+    // 내 점수 표시 선 플러그인 (유지)
     const scoreLinePlugin = {
         id: 'userScoreLine',
         afterDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-            const xPos = x.getPixelForValue(showPercentile ?
+            const xPos = x.getPixelForValue(showPercentile ? 
                 (1 - normalCDF(score, mean, stddev)) * 100 : 
                 score
             );
@@ -567,7 +563,7 @@ function drawChart(mean, stddev, score) {
         plugins: [bandPlugin, scoreLinePlugin]
     });
 
-    // 차트 데이터 저장 (주석: 토글 시 사용)
+    // 차트 데이터 저장 (토글 시 사용)
     lastChartData = { mean, stddev, score };
 }
 
