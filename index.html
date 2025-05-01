@@ -33,6 +33,16 @@
     <button onclick="calculateAndDraw()"
         class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto">계산하기</button>
 
+        <!-- 결과 영역도 반응형 max-width 적용 -->
+        <div class="mt-6 w-full max-w-xs sm:max-w-md md:max-w-2xl">
+            <canvas id="chartCanvas"></canvas>
+        </div>
+        
+        
+        <!-- 결과 표시 영역을 버튼 바로 아래로 이동 -->
+        <div id="result" class="mt-4 text-lg font-medium text-gray-800 text-center w-full max-w-xs sm:max-w-md md:max-w-xl">
+        </div>
+
     <!-- 학점 구간 커스텀 UI 추가 -->
     <div class="mt-8 w-full max-w-xs sm:max-w-md md:max-w-xl">
         <h2 class="text-xl font-semibold mb-2">학점 구간 설정</h2>
@@ -46,12 +56,10 @@
     <!-- 학점 구간별 경계값/상위% 표 영역 -->
     <div id="grade-table" class="mt-4 w-full max-w-xs sm:max-w-md md:max-w-xl"></div>
 
-    <!-- 결과 영역도 반응형 max-width 적용 -->
-    <div class="mt-6 w-full max-w-xs sm:max-w-md md:max-w-2xl">
-        <canvas id="chartCanvas"></canvas>
-    </div>
 
-    <div id="result" class="mt-6 text-lg font-medium text-gray-800"></div>
+    <!-- 주요 백분율 정보 표시 영역 삭제 -->
+    <!-- <div id="percentile-info" class="mt-4 w-full max-w-xs sm:max-w-md md:max-w-xl text-sm">
+                                    </div> -->
 
     <style>
         .input {

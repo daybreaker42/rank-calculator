@@ -174,66 +174,50 @@ function erf(x) {
   return sign * y;
 }
 
-// drawChart 함수 수정 (주석: x축을 상위 백분율(%) 기준으로 변경)
+// drawChart 함수 수정 (주석: y축 표시 및 제목 설정)
 function drawChart(mean, stddev, score) {
     const ctx = document.getElementById("chartCanvas").getContext("2d");
-    const currentBands = getGradeBands(); // 현재 커스텀 학점 구간 가져오기 (주석)
-    const userPercentile = (1 - normalCDF(score, mean, stddev)) * 100; // 사용자의 상위 백분율 계산 (주석)
+    const currentBands = getGradeBands();
+    const userPercentile = (1 - normalCDF(score, mean, stddev)) * 100;
 
-    const xPercentiles = []; // x축: 상위 백분율 값 (0 ~ 100) (주석)
-    const yDensityValues = []; // y축: 해당 백분율 지점에서의 확률 밀도 (시각적 형태 유지용) (주석)
+    const xPercentiles = [];
+    const yDensityValues = [];
 
-    // 백분율 0.1% 단위로 데이터 포인트 생성 (주석)
-    for (let p = 0.1; p <= 100; p += 0.1) {
-        // 해당 상위 백분율 p에 해당하는 Z-점수 계산 (역 CDF 근사 필요) (주석)
-        // 간단하게는, 특정 점수 범위에 대해 CDF를 계산하고 매핑할 수 있음 (주석)
-        // 여기서는 시각적 표현을 위해 점수 기반 계산 유지 후 x축만 변환 (주석)
+    const xMinScore = Math.max(0, mean - 5 * stddev);
+    const xMaxScore = Math.max(100, mean + 5 * stddev);
+    const scoreStep = (xMaxScore - xMinScore) / 500;
 
-        // 점수 범위 계산 (기존 방식 유지) (주석)
-        const xMinScore = Math.max(0, mean - 5 * stddev); // 좀 더 넓은 범위 고려 (주석)
-        const xMaxScore = Math.max(100, mean + 5 * stddev);
-        const scoreStep = (xMaxScore - xMinScore) / 500; // 점수 기준 스텝 (주석)
+    xPercentiles.length = 0;
+    yDensityValues.length = 0;
 
-        // xPercentiles, yDensityValues 초기화 (주석)
-        xPercentiles.length = 0;
-        yDensityValues.length = 0;
+    for (let currentScore = xMinScore; currentScore <= xMaxScore; currentScore += scoreStep) {
+        const percentile = (1 - normalCDF(currentScore, mean, stddev)) * 100;
+        const density = normalPDF(currentScore, mean, stddev);
 
-        // 점수 기준으로 순회하며 백분율과 밀도 계산 (주석)
-        for (let currentScore = xMinScore; currentScore <= xMaxScore; currentScore += scoreStep) {
-            const percentile = (1 - normalCDF(currentScore, mean, stddev)) * 100; // 현재 점수의 상위 백분율 (주석)
-            const density = normalPDF(currentScore, mean, stddev); // 현재 점수의 확률 밀도 (주석)
-
-            // 백분율 오름차순으로 데이터 추가 (0%가 오른쪽, 100%가 왼쪽) -> x축 반전 필요 (주석)
-            // 또는 백분율 내림차순으로 데이터 추가 (0%가 왼쪽, 100%가 오른쪽) (주석)
-            xPercentiles.push(percentile);
-            yDensityValues.push(density);
-        }
-        // 데이터 정렬 (백분율 오름차순으로 정렬) (주석)
-        const points = xPercentiles.map((p, i) => ({ x: p, y: yDensityValues[i] }));
-        points.sort((a, b) => a.x - b.x); // x (백분율) 기준 오름차순 정렬 (주석)
-
-        // 정렬된 데이터 다시 분리 (주석)
-        xPercentiles.length = 0;
-        yDensityValues.length = 0;
-        points.forEach(p => {
-            xPercentiles.push(p.x);
-            yDensityValues.push(p.y);
-        });
+        xPercentiles.push(percentile);
+        yDensityValues.push(density);
     }
 
+    const points = xPercentiles.map((p, i) => ({ x: p, y: yDensityValues[i] }));
+    points.sort((a, b) => a.x - b.x);
 
-    // 학점 구간 배경 플러그인 (주석: 백분율 기준)
+    xPercentiles.length = 0;
+    yDensityValues.length = 0;
+    points.forEach(p => {
+        xPercentiles.push(p.x);
+        yDensityValues.push(p.y);
+    });
+
     const bandPlugin = {
-        id: 'gradeBandsPercentile', // ID 변경 (주석)
+        id: 'gradeBandsPercentile',
         beforeDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
             currentBands.forEach(band => {
-                // 각 학점 구간의 경계 점수를 상위 백분율로 변환 (주석)
-                const minPercentile = (1 - normalCDF(band.max, mean, stddev)) * 100; // 최대 점수가 상위 % 낮음 (주석)
-                const maxPercentile = (1 - normalCDF(band.min, mean, stddev)) * 100; // 최소 점수가 상위 % 높음 (주석)
+                const minPercentile = (1 - normalCDF(band.max, mean, stddev)) * 100;
+                const maxPercentile = (1 - normalCDF(band.min, mean, stddev)) * 100;
 
                 ctx.fillStyle = band.color;
-                const xMinPixel = x.getPixelForValue(minPercentile); // 백분율 값으로 픽셀 위치 계산 (주석)
+                const xMinPixel = x.getPixelForValue(minPercentile);
                 const xMaxPixel = x.getPixelForValue(maxPercentile);
                 const chartLeft = x.left;
                 const chartRight = x.right;
@@ -249,12 +233,10 @@ function drawChart(mean, stddev, score) {
         }
     };
 
-    // 내 위치 표시 선 플러그인 (주석: 백분율 기준)
     const scoreLinePlugin = {
-        id: 'userPercentileLine', // ID 변경 (주석)
+        id: 'userPercentileLine',
         afterDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-            // 사용자의 상위 백분율 위치에 선 그리기 (주석)
             const xPos = x.getPixelForValue(userPercentile);
             ctx.save();
             ctx.beginPath();
@@ -264,31 +246,25 @@ function drawChart(mean, stddev, score) {
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // 선 위에 백분율 텍스트 표시 (선택 사항) (주석)
             ctx.fillStyle = 'red';
             ctx.textAlign = 'center';
-            ctx.fillText(`${userPercentile.toFixed(3)}%`, xPos, top - 5); // 선 위에 표시 (주석)
+            ctx.fillText(`${userPercentile.toFixed(3)}%`, xPos, top - 5);
             ctx.restore();
         }
     };
 
-    // 기존 차트 파괴 및 재생성 (주석)
     if (chart) chart.destroy();
     chart = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: xPercentiles, // x축 레이블: 상위 백분율 (주석)
+            labels: xPercentiles,
             datasets: [{
-                label: '확률 밀도', // y축 의미는 밀도지만, 시각적 형태만 참고 (주석)
+                label: '상대적 인원 밀도',
                 data: yDensityValues,
                 borderColor: '#3b82f6',
                 borderWidth: 2,
                 fill: false,
                 pointRadius: 0,
-                // x축 데이터가 백분율이므로, x축 스케일과 매칭 (주석)
-                // Chart.js는 기본적으로 data 배열의 인덱스를 x축으로 사용하려 할 수 있음
-                // Scatter 또는 {x, y} 형태 데이터 사용 고려 가능하나, line으로 유지 (주석)
-                // x축 값(labels)과 data 배열 길이가 일치해야 함 (주석)
             }]
         },
         options: {
@@ -296,48 +272,55 @@ function drawChart(mean, stddev, score) {
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    type: 'linear', // 선형 축 (주석)
+                    type: 'linear',
                     title: {
                         display: true,
-                        text: '상위 백분율 (%)' // x축 제목 변경 (주석)
+                        text: '상위 백분율 (%)'
                     },
-                    min: 0,   // 최소 0% (주석)
-                    max: 100, // 최대 100% (주석)
-                    reverse: false, // 0%가 왼쪽, 100%가 오른쪽 (주석)
+                    min: 0,
+                    max: 100,
+                    reverse: false,
                     ticks: {
-                        // 백분율 포맷 (소수점 1자리 정도면 충분할 수 있음) (주석)
                         callback: function (value, index, values) {
-                            return `${Number(value).toFixed(1)}%`; // % 기호 추가 (주석)
+                            return `${Number(value).toFixed(1)}%`;
                         },
-                        stepSize: 10 // 10% 단위 눈금 제안 (주석)
+                        stepSize: 10
                     }
                 },
                 y: {
-                    display: false // y축(확률 밀도) 숨김 (주석)
+                    display: true,
+                    title: {
+                        display: true,
+                        text: '상대적 인원 밀도'
+                    },
+                    ticks: {
+                        maxTicksLimit: 6
+                    }
                 }
             },
             plugins: {
-                legend: { display: false },
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
                 tooltip: {
-                    enabled: true, // 툴팁 활성화 (선택 사항) (주석)
+                    enabled: true,
                     mode: 'index',
                     intersect: false,
                     callbacks: {
-                        // 툴팁 내용 커스터마이즈 (주석)
                         title: function (tooltipItems) {
-                            // 툴팁 제목: 상위 백분율 (주석)
                             const percentile = tooltipItems[0].parsed.x;
                             return `상위 ${percentile.toFixed(3)}%`;
                         },
                         label: function (tooltipItem) {
-                            // 툴팁 내용: 비워두거나 다른 정보 표시 가능 (주석)
-                            return ''; // y값(밀도)은 사용자에게 불필요 (주석)
+                            const density = tooltipItem.parsed.y;
+                            return `밀도: ${density.toFixed(5)}`;
                         }
                     }
                 }
             }
         },
-        plugins: [bandPlugin, scoreLinePlugin] // 수정된 플러그인 등록 (주석)
+        plugins: [bandPlugin, scoreLinePlugin]
     });
 }
 
