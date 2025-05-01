@@ -16,7 +16,6 @@ function erf(x) {
     const y = 1 - (((((a5 * t + a4) * t + a3) * t + a2) * t + a1) * t) * Math.exp(-x * x);
     return sign * y;
 }
-  
 
 function normalInverseCDF(p, mean = 0, stddev = 1) {
     if (p <= 0 || p >= 1) {

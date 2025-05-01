@@ -51,14 +51,38 @@ function drawChart(mean, stddev, score) {
     const stepCount = 50; // 데이터 포인트 수
     const step = (maxScore - minScore) / stepCount;
 
-    for (let x = minScore; x <= maxScore; x += step) {
-        const density = normalPDF(x, mean, stddev);
-        const percentile = (1 - normalCDF(x, mean, stddev)) * 100;
-        data.push({
-            score: x,
-            percentile: percentile,
-            count: density * population * step
-        });
+    // 백분율 모드에서는 백분율 간격을 균등하게 분포시키기 위한 수정
+    // 주석: 백분율 모드에서 차트 막대를 균일한 두께로 표시하기 위해 데이터 생성 방식 수정
+    if (showPercentile) {
+        // 백분율 기준으로 균등한 간격으로 데이터 생성
+        const percentileStep = 100 / stepCount;
+        for (let percentile = 0; percentile <= 100; percentile += percentileStep) {
+            // 역으로 백분율에 해당하는 점수 계산
+            let p = 1 - (percentile / 100);
+            p = Math.max(0.0001, Math.min(0.9999, p)); // 0과 1 사이로 제한
+            const x = normalInverseCDF(p, mean, stddev);
+
+            // 유효한 점수 범위 내에 있는 경우만 추가
+            if (x >= minScore && x <= maxScore) {
+                const density = normalPDF(x, mean, stddev);
+                data.push({
+                    score: x,
+                    percentile: percentile,
+                    count: density * population * step
+                });
+            }
+        }
+    } else {
+    // 기존 점수 모드 데이터 생성 방식 유지
+        for (let x = minScore; x <= maxScore; x += step) {
+            const density = normalPDF(x, mean, stddev);
+            const percentile = (1 - normalCDF(x, mean, stddev)) * 100;
+            data.push({
+                score: x,
+                percentile: percentile,
+                count: density * population * step
+            });
+        }
     }
 
     // X축 데이터 설정 (토글 상태에 따라 점수 또는 백분율 사용)
