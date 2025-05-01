@@ -43,7 +43,7 @@
     </div>
 
     <!-- 결과 영역도 반응형 max-width 적용 -->
-    <!-- <div class="mt-6 w-full max-w-xs sm:max-w-md md:max-w-2xl">
+    <div class="mt-6 w-full max-w-[1000px]">
         <div class="flex items-center justify-end mb-2 gap-2">
             <span class="text-sm text-gray-700">X축:</span>
             <label class="inline-flex items-center cursor-pointer">
@@ -57,14 +57,17 @@
                 <span class="ml-2 text-sm text-gray-700">상위 백분율</span>
             </label>
         </div>
-        <div class="relative h-[400px]">
+        <div class="relative h-[200px]">
             <canvas id="chartCanvas"></canvas>
         </div>
-    </div> -->
+    </div>
         
     <!-- 결과 표시 영역을 버튼 바로 아래로 이동 -->
     <div id="result" class="mt-4 text-lg font-medium text-gray-800 text-center w-full max-w-xs sm:max-w-md md:max-w-xl">
     </div>
+
+    <!-- 학점 구간별 경계값/상위% 표 영역 -->
+    <div id="grade-table" class="mt-4 w-full max-w-xs sm:max-w-md md:max-w-xl"></div>
 
     <!-- 학점 구간 커스텀 UI 추가 -->
     <div class="mt-8 w-full max-w-xs sm:max-w-md md:max-w-xl">
@@ -84,8 +87,6 @@
             class="mt-2 text-sm bg-green-500 text-white px-2 py-1 rounded hover:bg-green-600">구간 추가</button>
     </div>
     
-    <!-- 학점 구간별 경계값/상위% 표 영역 -->
-    <div id="grade-table" class="mt-4 w-full max-w-xs sm:max-w-md md:max-w-xl"></div>
 
     <div class="mt-4 w-full max-w-xs sm:max-w-md text-center">
         <button onclick="resetAllData()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
@@ -141,6 +142,9 @@
         <p>Contact: <a href="mailto:han123400040@gmail.com" class="text-blue-600 hover:text-blue-800">han123400040@gmail.com</a>
         </p>
     </footer>
+    <script src="math.js"></script>
+    <script src="storage.js"></script>
+    <script src="render.js"></script>
     <script src="script.js"></script>
 </body>
 </html>
