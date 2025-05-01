@@ -9,6 +9,9 @@
    - 정규분포 히스토그램 표시
    - 구간별 상위 백분율 기준 색상 구분
    - 내 점수 위치 표시
+4. **다크모드/라이트모드 테마 전환**
+   - 사용자 선호도에 따른 테마 자동 저장
+   - 시스템 설정과 연동 가능
 
 ## 커스텀 학점 구간 설정
 - 학점별 하한선만 입력하면 자동으로 상한선 계산
@@ -21,6 +24,7 @@
 ## 데이터 관리
 - '값 비우기': 입력 필드 초기화 (설정 유지)
 - '설정 초기화': 모든 설정 및 입력값 초기화
+- **사용자 테마 설정 자동 저장**: 로컬 스토리지에 테마 선호도 저장
 
 ## 학점 구간 표시 방식
 - X축: 점수
@@ -38,10 +42,16 @@
    - 예상 학점
    - 분포도 시각화
 
+## 사용자 경험
+- 반응형 디자인으로 다양한 디바이스 지원
+- **다크모드/라이트모드 전환으로 사용 환경 최적화**
+- 직관적인 UI로 복잡한 통계 개념도 쉽게 이해
+
 ## 기술 스택
 - HTML/CSS (Tailwind CSS)
 - JavaScript (Vanilla JS)
 - Chart.js (그래프 시각화)
+- 로컬 스토리지 (사용자 설정 저장)
 
 ## 라이선스
 MIT License
@@ -49,7 +59,7 @@ MIT License
 ## 참고 자료
 - [Chart.js 공식 문서](https://www.chartjs.org/docs/latest/)
 - [Tailwind CSS 공식 문서](https://tailwindcss.com/docs/)
-- [GitHub Docs: README 작성법](https://docs.github.com/en/get-started/quickstart/README)
+- [MDN Web Storage API](https://developer.mozilla.org/ko/docs/Web/API/Web_Storage_API)
 
 ## 기여
 이슈 및 PR은 언제든 환영합니다.
@@ -60,3 +70,4 @@ MIT License
 - 결과 PDF/이미지로 내보내기
 - 다중 과목 입력 및 비교 기능
 - 접근성(Accessibility) 향상: aria-label, 키보드 네비게이션 등
+- 커스텀 테마 색상 설정

@@ -2,9 +2,6 @@ let chart = null;
 let lastChartData = null; // 전역 변수로 차트 설정 저장
 let showChartType = 'score'; // 기본 차트 타입: score | percentile
 
-// localStorage 키 정의 (주석: 설정 저장을 위한 고유 키)
-const LS_SETTINGS_KEY = 'gradeCalculatorSettings_v1'; // 버전 명시하여 추후 호환성 관리 용이
-
 // 기본 학점 구간 정의 (주석: 초기값 또는 저장된 설정 없을 시 사용)
 const defaultGradeBands = [
     // A학점 30% (A+ 10%, A0 20%), B학점 40% (B+ 20%, B0 20%), C학점 이하 30% (C+ 15%, C0 10%, D 이하 5%)

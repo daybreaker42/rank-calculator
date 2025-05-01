@@ -23,10 +23,10 @@ function createGradeBandRow(band, index, totalRows) {
         <input type="text" placeholder="학점명 (예: A+)" value="${band.grade || ''}" class="input grade-band-grade" data-type="grade" aria-label="학점명 ${index + 1}">
         <input type="number" step="0.01" placeholder="최소 점수" value="${band.min}" class="input grade-band-min" data-type="min" aria-label="최소 점수 ${index + 1}">
         <div class="flex justify-between">
-            <button onclick="moveGradeBand(${index}, 'up')" class="text-blue-500 hover:text-blue-700 px-2" ${index === 0 ? 'disabled' : ''} aria-label="위로 이동">↑</button>
-            <button onclick="moveGradeBand(${index}, 'down')" class="text-blue-500 hover:text-blue-700 px-2" ${index === totalRows - 1 ? 'disabled' : ''} aria-label="아래로 이동">↓</button>
+            <button onclick="moveGradeBand(${index}, 'up')" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-2" ${index === 0 ? 'disabled' : ''} aria-label="위로 이동">↑</button>
+            <button onclick="moveGradeBand(${index}, 'down')" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 px-2" ${index === totalRows - 1 ? 'disabled' : ''} aria-label="아래로 이동">↓</button>
         </div>
-        <button onclick="removeGradeBandRow(this)" class="text-red-500 hover:text-red-700" aria-label="${index + 1}번째 구간 삭제">삭제</button>
+        <button onclick="removeGradeBandRow(this)" class="text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300" aria-label="${index + 1}번째 구간 삭제">삭제</button>
     `;
 
     // 탭 키 네비게이션 순서 설정
@@ -40,6 +40,9 @@ function drawChart(mean, stddev, score) {
     const ctx = document.getElementById("chartCanvas").getContext("2d");
     const currentBands = getGradeBands(); // 현재 커스텀 학점 구간
     const population = parseInt(document.getElementById("population").value) || 0; // 전체 인원수
+
+    // 다크모드 감지
+    const isDarkMode = document.documentElement.classList.contains('dark'); // 추가: 다크모드 감지
 
     // showPercentile 변수는 유지 (토글 기능)
     const showPercentile = showChartType === 'percentile';
@@ -122,7 +125,8 @@ function drawChart(mean, stddev, score) {
 
                     // 구간 레이블 표시
                     ctx.save();
-                    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                    // 다크모드에서 텍스트 색상 조정 (추가)
+                    ctx.fillStyle = isDarkMode ? 'rgba(255,255,255,0.8)' : 'rgba(0,0,0,0.7)';
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'center';
                     const labelY = top + 20;
@@ -179,8 +183,8 @@ function drawChart(mean, stddev, score) {
             datasets: [{
                 label: '예상 인원수',
                 data: chartData,
-                backgroundColor: 'rgba(59, 130, 246, 0.5)',
-                borderColor: 'rgba(59, 130, 246, 1)',
+                backgroundColor: isDarkMode ? 'rgba(96, 165, 250, 0.5)' : 'rgba(59, 130, 246, 0.5)', // 다크모드에서 약간 더 밝은 색상 (추가)
+                borderColor: isDarkMode ? 'rgba(96, 165, 250, 1)' : 'rgba(59, 130, 246, 1)', // 다크모드에서 약간 더 밝은 색상 (추가)
                 borderWidth: 1,
                 barPercentage: 1.0,
                 categoryPercentage: 1.0,
@@ -196,27 +200,39 @@ function drawChart(mean, stddev, score) {
                     reverse: showPercentile,
                     title: {
                         display: true,
-                        text: showPercentile ? '상위 백분율 (%)' : '점수'
+                        text: showPercentile ? '상위 백분율 (%)' : '점수',
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // 다크모드에서 글자색 변경 (추가)
                     },
                     min: showPercentile ? 0 : minScore,
                     max: showPercentile ? 100 : maxScore,
                     ticks: {
                         maxTicksLimit: 10,
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)', // 다크모드에서 글자색 변경 (추가)
                         callback: function (value) {
                             if (showPercentile) {
                                 return '상위 ' + value.toFixed(0) + '%';
                             }
                             return value.toFixed(0) + '점';
                         }
+                    },
+                    grid: {
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' // 다크모드에서 그리드 색상 변경 (추가)
                     }
                 },
                 y: {
                     display: true,
                     title: {
                         display: true,
-                        text: '예상 인원수'
+                        text: '예상 인원수',
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // 다크모드에서 글자색 변경 (추가)
                     },
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.7)' // 다크모드에서 글자색 변경 (추가)
+                    },
+                    grid: {
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' // 다크모드에서 그리드 색상 변경 (추가)
+                    }
                 }
             },
             plugins: {
@@ -246,6 +262,17 @@ function drawChart(mean, stddev, score) {
                             const count = tooltipItem.parsed.y;
                             return `예상 인원: ${count.toFixed(1)}명`;
                         }
+                    },
+                    // 다크모드에서 툴팁 배경색과 글자색 변경 (추가)
+                    backgroundColor: isDarkMode ? 'rgba(30, 41, 59, 0.8)' : 'rgba(0, 0, 0, 0.8)',
+                    titleColor: isDarkMode ? 'rgba(255, 255, 255, 0.9)' : 'white',
+                    bodyColor: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'white',
+                    padding: 10,
+                    cornerRadius: 4
+                },
+                legend: {
+                    labels: {
+                        color: isDarkMode ? 'rgba(255, 255, 255, 0.8)' : 'rgba(0, 0, 0, 0.8)' // 다크모드에서 범례 색상 변경 (추가)
                     }
                 }
             }
@@ -262,11 +289,17 @@ function renderGradeTable(mean, stddev, population) {
     const tableContainer = document.getElementById("grade-table");
     if (!tableContainer) return;
 
-    let html = `<h3 class="text-lg font-semibold mb-1">학점 구간별 정보</h3>
-    <p class="text-sm text-gray-600 mb-2">* 하한선은 상위 백분율을 의미합니다. (예: 90은 상위 10%를 의미)</p>`;
+    // 다크모드 감지 (추가)
+    const isDarkMode = document.documentElement.classList.contains('dark');
+    const headerClass = isDarkMode ? 'bg-blue-900 text-white' : 'bg-blue-100';
+    const tableClass = isDarkMode ? 'border-gray-700' : 'border';
+    const textClass = isDarkMode ? 'text-gray-400' : 'text-gray-600';
 
-    html += `<table class="min-w-full border text-center text-sm">
-    <thead class="bg-blue-100">
+    let html = `<h3 class="text-lg font-semibold mb-1">학점 구간별 정보</h3>
+    <p class="text-sm ${textClass} mb-2">* 하한선은 상위 백분율을 의미합니다. (예: 90은 상위 10%를 의미)</p>`;
+
+    html += `<table class="min-w-full ${tableClass} text-center text-sm">
+    <thead class="${headerClass}">
       <tr>
         <th class="border px-2 py-1">학점</th>
         <th class="border px-2 py-1">상위 백분율</th>
@@ -274,7 +307,7 @@ function renderGradeTable(mean, stddev, population) {
         <th class="border px-2 py-1">예상 인원</th>
       </tr>
     </thead>
-    <tbody>`;
+    <tbody class="${isDarkMode ? 'text-gray-300' : ''}">`;
 
     bands.forEach((band, index) => {
         const [topPercentile, nextTopPercentile, score1, score2] = computeScorePercentileRange(mean, stddev, band.max, index === bands.length - 1 ? 0 : bands[index + 1].max);
@@ -282,7 +315,12 @@ function renderGradeTable(mean, stddev, population) {
         // 예상 인원수 계산 (주석: 현재 구간의 백분율 차이 * 전체 인원수)
         const expectedCount = Math.round((nextTopPercentile - topPercentile) * population / 100);
 
-        html += `<tr>
+        // 다크모드에서 행 배경색 교대 적용 (추가)
+        const rowClass = isDarkMode
+            ? (index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900')
+            : (index % 2 === 0 ? 'bg-gray-100' : 'bg-white');
+
+        html += `<tr class="${rowClass}">
             <td class="border px-2 py-1">${band.grade}</td>
             <td class="border px-2 py-1">상위 ${nextTopPercentile.toFixed(1)}%</td>
             <td class="border px-2 py-1">${Math.round(score1)}점 ~ ${Math.round(score2)}점</td>
