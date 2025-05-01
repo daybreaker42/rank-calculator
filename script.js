@@ -4,14 +4,14 @@ const LS_SETTINGS_KEY = 'gradeCalculatorSettings_v1'; // 버전 명시하여 추
 
 // 기본 학점 구간 정의 (주석: 초기값 또는 저장된 설정 없을 시 사용)
 const defaultGradeBands = [
-    // 점수 높은 순으로 정렬 (주석)
-    { grade: "A+", min: 95, max: 100, color: "rgba(37,99,235,0.2)" },
-    { grade: "A", min: 90, max: 94.99, color: "rgba(56,189,248,0.2)" }, // 최대값 조정하여 경계 명확화 (주석)
-    { grade: "B+", min: 85, max: 89.99, color: "rgba(22,163,74,0.2)" },
-    { grade: "B", min: 80, max: 84.99, color: "rgba(132,204,22,0.2)" },
-    { grade: "C+", min: 75, max: 79.99, color: "rgba(234,179,8,0.2)" },
-    { grade: "C", min: 70, max: 74.99, color: "rgba(249,115,22,0.2)" },
-    { grade: "D or lower", min: 0, max: 69.99, color: "rgba(220,38,38,0.2)" }
+    // A학점 30% (A+ 10%, A0 20%), B학점 40% (B+ 20%, B0 20%), C학점 이하 30% (C+ 15%, C0 10%, D 이하 5%) (주석)
+    { grade: "A+", min: 90, max: 100, color: "rgba(37,99,235,0.2)" },
+    { grade: "A0", min: 85, max: 89.99, color: "rgba(56,189,248,0.2)" },
+    { grade: "B+", min: 80, max: 84.99, color: "rgba(22,163,74,0.2)" },
+    { grade: "B0", min: 75, max: 79.99, color: "rgba(132,204,22,0.2)" },
+    { grade: "C+", min: 70, max: 74.99, color: "rgba(234,179,8,0.2)" },
+    { grade: "C0", min: 65, max: 69.99, color: "rgba(249,115,22,0.2)" },
+    { grade: "D or lower", min: 0, max: 64.99, color: "rgba(220,38,38,0.2)" }
 ];
 
 // localStorage에서 설정 불러오기 함수 (주석)
@@ -56,6 +56,34 @@ function saveSettings() {
     }
 }
 
+// localStorage와 입력값을 초기화하는 함수 (주석: 새로 추가)
+function resetAllData() {
+    if (confirm('모든 설정과 입력값이 초기화됩니다. 계속하시겠습니까?')) {
+        // localStorage 초기화 (주석)
+        localStorage.removeItem('gradeBands');
+        localStorage.removeItem('lastInputs');
+
+        // 입력값 초기화 (주석)
+        document.getElementById('mean').value = '';
+        document.getElementById('stddev').value = '';
+        document.getElementById('population').value = '';
+        document.getElementById('score').value = '';
+
+        // 차트 초기화 (주석)
+        const ctx = document.getElementById('chartCanvas').getContext('2d');
+        if (window.myChart) {
+            window.myChart.destroy();
+        }
+
+        // 결과 텍스트 초기화 (주석)
+        document.getElementById('result').innerHTML = '';
+        document.getElementById('grade-table').innerHTML = '';
+
+        // 학점 구간 에디터 초기화 (주석)
+        renderGradeBandEditor(defaultGradeBands);
+    }
+}
+
 // 학점 구간 에디터 UI 렌더링 함수 (주석)
 function renderGradeBandEditor(bands) {
     const editorDiv = document.getElementById("grade-bands-editor");
@@ -69,25 +97,121 @@ function renderGradeBandEditor(bands) {
     });
 }
 
-// 학점 구간 입력 행 생성 함수 (주석)
+// 학점 구간 입력 행 생성 함수
 function createGradeBandRow(band, index, totalRows) {
     const row = document.createElement('div');
-    row.className = 'grid grid-cols-4 gap-2 items-center grade-band-row'; // 행 식별 클래스 추가 (주석)
-    row.dataset.index = index; // 데이터 속성으로 인덱스 저장 (주석)
+    row.className = 'grid grid-cols-4 gap-2 items-center grade-band-row';
+    row.dataset.index = index;
+
+    // 순서 변경 버튼을 포함한 새로운 레이아웃
     row.innerHTML = `
-        <input type="text" placeholder="학점명 (예: A+)" value="${band.grade || ''}" class="input grade-band-grade" aria-label="학점명 ${index + 1}">
-        <input type="number" step="0.01" placeholder="최소 점수" value="${band.min}" class="input grade-band-min" aria-label="최소 점수 ${index + 1}">
-        <input type="number" step="0.01" placeholder="최대 점수" value="${band.max}" class="input grade-band-max" aria-label="최대 점수 ${index + 1}">
-        <button onclick="removeGradeBandRow(this)" class="text-red-500 hover:text-red-700 text-sm" aria-label="${index + 1}번째 구간 삭제">삭제</button>
+        <input type="text" placeholder="학점명 (예: A+)" value="${band.grade || ''}" 
+            class="input grade-band-grade" data-type="grade" aria-label="학점명 ${index + 1}">
+        <input type="number" step="0.01" placeholder="최소 점수" value="${band.min}" 
+            class="input grade-band-min" data-type="min" aria-label="최소 점수 ${index + 1}">
+        <div class="flex gap-1">
+            <button onclick="moveGradeBand(${index}, 'up')" class="text-blue-500 hover:text-blue-700 px-2" 
+                ${index === 0 ? 'disabled' : ''} aria-label="위로 이동">↑</button>
+            <button onclick="moveGradeBand(${index}, 'down')" class="text-blue-500 hover:text-blue-700 px-2" 
+                ${index === totalRows - 1 ? 'disabled' : ''} aria-label="아래로 이동">↓</button>
+        </div>
+        <button onclick="removeGradeBandRow(this)" class="text-red-500 hover:text-red-700" 
+            aria-label="${index + 1}번째 구간 삭제">삭제</button>
     `;
+
+    // 탭 키 네비게이션 순서 설정
+    setupTabNavigation(row);
+
     return row;
 }
 
-// 학점 구간 입력 행 추가 함수 (주석)
+// 탭 키 네비게이션 설정 함수
+function setupTabNavigation(row) {
+    const inputs = row.querySelectorAll('input');
+    inputs.forEach(input => {
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const type = input.dataset.type;
+                const allRows = document.querySelectorAll('.grade-band-row');
+                const allGrades = [...document.querySelectorAll('.grade-band-grade')];
+                const allMins = [...document.querySelectorAll('.grade-band-min')];
+
+                if (type === 'grade') {
+                    // 학점명 입력 중 탭 키: 다음 학점명으로
+                    const currentIndex = allGrades.indexOf(input);
+                    if (currentIndex < allGrades.length - 1) {
+                        allGrades[currentIndex + 1].focus();
+                    } else {
+                        // 마지막 학점명이면 첫 번째 하한선으로
+                        allMins[0].focus();
+                    }
+                } else if (type === 'min') {
+                    // 하한선 입력 중 탭 키: 다음 하한선으로
+                    const currentIndex = allMins.indexOf(input);
+                    if (currentIndex < allMins.length - 1) {
+                        allMins[currentIndex + 1].focus();
+                    } else {
+                        // 마지막 하한선이면 첫 번째 학점명으로
+                        allGrades[0].focus();
+                    }
+                }
+            }
+        });
+
+        // 하한선 값 변경 시 자동 정렬 및 하위 구간 조정
+        if (input.dataset.type === 'min') {
+            input.addEventListener('change', () => {
+                const newValue = parseFloat(input.value);
+                if (!isNaN(newValue)) {
+                    const allRows = [...document.querySelectorAll('.grade-band-row')];
+                    const currentRowIndex = allRows.findIndex(r => r.contains(input));
+
+                    // 현재 행 이후의 모든 하한선 조정
+                    for (let i = currentRowIndex + 1; i < allRows.length; i++) {
+                        const minInput = allRows[i].querySelector('.grade-band-min');
+                        const currentMin = parseFloat(minInput.value);
+                        if (!isNaN(currentMin) && currentMin > newValue) {
+                            minInput.value = newValue;
+                        }
+                    }
+
+                    saveSettings();
+                }
+            });
+        }
+    });
+}
+
+// 구간 순서 변경 함수
+function moveGradeBand(index, direction) {
+    const rows = [...document.querySelectorAll('.grade-band-row')];
+    if (direction === 'up' && index > 0) {
+        // 위로 이동: 학점명만 교환
+        const currentGrade = rows[index].querySelector('.grade-band-grade').value;
+        const prevGrade = rows[index - 1].querySelector('.grade-band-grade').value;
+        rows[index].querySelector('.grade-band-grade').value = prevGrade;
+        rows[index - 1].querySelector('.grade-band-grade').value = currentGrade;
+    } else if (direction === 'down' && index < rows.length - 1) {
+        // 아래로 이동: 학점명만 교환
+        const currentGrade = rows[index].querySelector('.grade-band-grade').value;
+        const nextGrade = rows[index + 1].querySelector('.grade-band-grade').value;
+        rows[index].querySelector('.grade-band-grade').value = nextGrade;
+        rows[index + 1].querySelector('.grade-band-grade').value = currentGrade;
+    }
+    saveSettings();
+}
+
+// 학점 구간 입력 행 추가 함수 (주석: 하한선만 입력받도록 수정)
 function addGradeBandRow() {
     const bands = getGradeBandsFromEditor();
     const lowestMin = bands.length > 0 ? bands[bands.length - 1].min : 0;
-    bands.push({ grade: "", min: Math.max(0, lowestMin - 10), max: Math.max(0, lowestMin - 0.01), color: "rgba(128,128,128,0.2)" });
+    // 새 구간 추가 시 기본값 설정 (주석)
+    bands.push({
+        grade: "",
+        min: Math.max(0, lowestMin - 10), // 이전 구간보다 10점 낮게 설정 (주석)
+        color: "rgba(128,128,128,0.2)"
+    });
     renderGradeBandEditor(bands);
     saveSettings();
 }
@@ -101,7 +225,7 @@ function removeGradeBandRow(buttonElement) {
     }
 }
 
-// 에디터 UI에서 현재 학점 구간 데이터 가져오는 함수 (주석)
+// 에디터 UI에서 현재 학점 구간 데이터 가져오는 함수 (주석: 자동 상한선 설정)
 function getGradeBandsFromEditor() {
     const editorDiv = document.getElementById("grade-bands-editor");
     if (!editorDiv) return [];
@@ -109,27 +233,39 @@ function getGradeBandsFromEditor() {
     const bands = [];
     const defaultColors = defaultGradeBands.map(b => b.color);
 
+    // 먼저 모든 유효한 입력값을 수집 (주석)
     for (let i = 0; i < rows.length; i++) {
         const gradeInput = rows[i].querySelector('.grade-band-grade');
         const minInput = rows[i].querySelector('.grade-band-min');
-        const maxInput = rows[i].querySelector('.grade-band-max');
 
         const grade = gradeInput.value.trim();
         const min = parseFloat(minInput.value);
-        const max = parseFloat(maxInput.value);
 
-        if (grade && !isNaN(min) && !isNaN(max) && min <= max) {
+        if (grade && !isNaN(min)) {
             bands.push({
                 grade: grade,
                 min: min,
-                max: max,
                 color: defaultColors[i] || "rgba(128,128,128,0.2)"
             });
         } else {
-            console.warn(`학점 구간 ${i + 1}의 입력값이 유효하지 않습니다:`, { grade, min, max });
+            console.warn(`학점 구간 ${i + 1}의 입력값이 유효하지 않습니다:`, { grade, min });
         }
     }
+
+    // 최소값 기준으로 내림차순 정렬 (주석)
     bands.sort((a, b) => b.min - a.min);
+
+    // 각 구간의 상한선을 자동으로 설정 (주석)
+    for (let i = 0; i < bands.length; i++) {
+        if (i === 0) {
+            // 가장 높은 구간의 상한선은 100점 (주석)
+            bands[i].max = 100;
+        } else {
+            // 나머지 구간의 상한선은 바로 위 구간의 하한선 - 0.01 (주석)
+            bands[i].max = bands[i - 1].min - 0.01;
+        }
+    }
+
     return bands;
 }
 

@@ -31,13 +31,17 @@
         </label>
     </div>
 
-    <button onclick="calculateAndDraw()"
-        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto">계산하기</button>
-
-        <!-- 결과 영역도 반응형 max-width 적용 -->
-        <div class="mt-6 w-full max-w-xs sm:max-w-md md:max-w-2xl">
-            <canvas id="chartCanvas"></canvas>
+    <div class="flex gap-4 w-full max-w-xs sm:max-w-md justify-center">
+        <button onclick="calculateAndDraw()"
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto">계산하기</button>
+        <button onclick="resetAllData()"
+            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto">초기화</button>
         </div>
+
+    <!-- 결과 영역도 반응형 max-width 적용 -->
+    <div class="mt-6 w-full max-w-xs sm:max-w-md md:max-w-2xl">
+        <canvas id="chartCanvas"></canvas>
+    </div>
         
         
         <!-- 결과 표시 영역을 버튼 바로 아래로 이동 -->
@@ -47,6 +51,13 @@
     <!-- 학점 구간 커스텀 UI 추가 -->
     <div class="mt-8 w-full max-w-xs sm:max-w-md md:max-w-xl">
         <h2 class="text-xl font-semibold mb-2">학점 구간 설정</h2>
+        <!-- 컬럼 헤더 추가 -->
+        <div class="grid grid-cols-4 gap-2 mb-2 px-2">
+            <div class="font-medium text-gray-700">학점명</div>
+            <div class="font-medium text-gray-700">하한선</div>
+            <div class="font-medium text-gray-700">순서 변경</div>
+            <div class="font-medium text-gray-700">삭제</div>
+        </div>
         <div id="grade-bands-editor" class="space-y-2">
             <!-- JS에서 동적으로 학점 구간 입력 행 생성 -->
         </div>
