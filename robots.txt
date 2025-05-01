@@ -1,0 +1,12 @@
+# 등수 계산기 웹 사이트의 robots.txt
+User-agent: *  # 모든 검색 엔진 크롤러에 적용
+Allow: /       # 모든 페이지 크롤링 허용
+
+# data-examples 디렉토리는 크롤링하지 않음
+Disallow: /data-examples/
+
+# 사이트맵 정보 제공 (향후 사이트맵 추가 시 활성화)
+# Sitemap: https://your-vercel-domain.vercel.app/sitemap.xml
+
+# 크롤링 빈도 조절 (선택 사항)
+Crawl-delay: 10  # 초 단위로 요청 간격 조정
