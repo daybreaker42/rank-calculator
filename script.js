@@ -1,12 +1,13 @@
 let chart = null;
-let lastChartData = null; // 전역 변수로 차트 설정 저장 (주석)
+let lastChartData = null; // 전역 변수로 차트 설정 저장
+let showChartType = 'score'; // 기본 차트 타입: score | percentile
 
 // localStorage 키 정의 (주석: 설정 저장을 위한 고유 키)
-const LS_SETTINGS_KEY = 'gradeCalculatorSettings_v1'; // 버전 명시하여 추후 호환성 관리 용이 (주석)
+const LS_SETTINGS_KEY = 'gradeCalculatorSettings_v1'; // 버전 명시하여 추후 호환성 관리 용이
 
 // 기본 학점 구간 정의 (주석: 초기값 또는 저장된 설정 없을 시 사용)
 const defaultGradeBands = [
-    // A학점 30% (A+ 10%, A0 20%), B학점 40% (B+ 20%, B0 20%), C학점 이하 30% (C+ 15%, C0 10%, D 이하 5%) (주석)
+    // A학점 30% (A+ 10%, A0 20%), B학점 40% (B+ 20%, B0 20%), C학점 이하 30% (C+ 15%, C0 10%, D 이하 5%)
     { grade: "A+", min: 90, max: 100, color: "rgba(37,99,235,0.2)" }, // A+ 구간
     { grade: "A0", min: 80, max: 89.99, color: "rgba(56,189,248,0.2)" }, // A0 구간
     { grade: "B+", min: 60, max: 79.99, color: "rgba(22,163,74,0.2)" }, // B+ 구간
@@ -16,34 +17,34 @@ const defaultGradeBands = [
     { grade: "D or lower", min: 0, max: 14.99, color: "rgba(220,38,38,0.2)" }  // D 이하 구간
 ];
 
-// localStorage에서 설정 불러오기 함수 (주석)
+// localStorage에서 설정 불러오기 함수
 function loadSettings() {
     try { // localStorage 접근 오류 처리 (주석: 프라이빗 브라우징 등)
         const savedSettings = localStorage.getItem(LS_SETTINGS_KEY);
         if (savedSettings) {
             const settings = JSON.parse(savedSettings);
-            // 저장된 입력값 복원 (주석)
+            // 저장된 입력값 복원
             document.getElementById("mean").value = settings.mean || '';
             document.getElementById("stddev").value = settings.stddev || '';
             document.getElementById("population").value = settings.population || '';
             document.getElementById("score").value = settings.score || '';
-            // 저장된 학점 구간이 있으면 사용, 없으면 기본값 사용 (주석)
+            // 저장된 학점 구간이 있으면 사용, 없으면 기본값 사용
             renderGradeBandEditor(settings.gradeBands && settings.gradeBands.length > 0 ? settings.gradeBands : defaultGradeBands);
         } else {
-            // 저장된 설정 없으면 기본 학점 구간으로 에디터 렌더링 (주석)
+            // 저장된 설정 없으면 기본 학점 구간으로 에디터 렌더링
             renderGradeBandEditor(defaultGradeBands);
         }
     } catch (e) {
-        console.error("localStorage 접근 중 오류 발생:", e); // 오류 로깅 (주석)
+        console.error("localStorage 접근 중 오류 발생:", e); // 오류 로깅
         alert("설정을 불러오는 중 오류가 발생했습니다. 브라우저 설정을 확인해주세요.");
-        renderGradeBandEditor(defaultGradeBands); // 오류 시 기본값으로 렌더링 (주석)
+        renderGradeBandEditor(defaultGradeBands); // 오류 시 기본값으로 렌더링
     }
 }
 
-// localStorage에 설정 저장하기 함수 (주석)
+// localStorage에 설정 저장하기 함수
 function saveSettings() {
-    try { // localStorage 접근 오류 처리 (주석)
-        const currentGradeBands = getGradeBandsFromEditor(); // 에디터에서 현재 학점 구간 가져오기 (주석)
+    try { // localStorage 접근 오류 처리
+        const currentGradeBands = getGradeBandsFromEditor(); // 에디터에서 현재 학점 구간 가져오기
         const settings = {
             mean: document.getElementById("mean").value,
             stddev: document.getElementById("stddev").value,
@@ -53,7 +54,7 @@ function saveSettings() {
         };
         localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
     } catch (e) {
-        console.error("localStorage 저장 중 오류 발생:", e); // 오류 로깅 (주석)
+        console.error("localStorage 저장 중 오류 발생:", e); // 오류 로깅
         alert("설정을 저장하는 중 오류가 발생했습니다. 브라우저 저장 공간이 부족하거나 설정을 확인해주세요.");
     }
 }
@@ -61,57 +62,57 @@ function saveSettings() {
 // localStorage와 입력값을 초기화하는 함수 (주석: 새로 추가)
 function resetAllData() {
     if (confirm('모든 설정과 입력값이 초기화됩니다. 계속하시겠습니까?')) {
-        // localStorage 초기화 (주석)
+        // localStorage 초기화
         localStorage.removeItem('gradeBands');
         localStorage.removeItem('lastInputs');
 
-        // 입력값 초기화 (주석)
+        // 입력값 초기화
         document.getElementById('mean').value = '';
         document.getElementById('stddev').value = '';
         document.getElementById('population').value = '';
         document.getElementById('score').value = '';
 
-        // 차트 초기화 (주석)
+        // 차트 초기화
         const ctx = document.getElementById('chartCanvas').getContext('2d');
         if (window.myChart) {
             window.myChart.destroy();
         }
 
-        // 결과 텍스트 초기화 (주석)
+        // 결과 텍스트 초기화
         document.getElementById('result').innerHTML = '';
         document.getElementById('grade-table').innerHTML = '';
 
-        // 학점 구간 에디터 초기화 (주석)
+        // 학점 구간 에디터 초기화
         renderGradeBandEditor(defaultGradeBands);
     }
 }
 
 // 입력값만 초기화하는 함수 (주석: 설정은 유지)
 function clearInputValues() {
-    // 입력 필드 초기화 (주석)
+    // 입력 필드 초기화
     document.getElementById('mean').value = '';
     document.getElementById('stddev').value = '';
     document.getElementById('population').value = '';
     document.getElementById('score').value = '';
 
-    // 결과 영역 초기화 (주석)
+    // 결과 영역 초기화
     document.getElementById('result').innerHTML = '';
 
-    // 차트 초기화 (주석)
+    // 차트 초기화
     if (window.myChart) {
         window.myChart.destroy();
         window.myChart = null;
     }
 
-    // 학점 구간별 정보 테이블 초기화 (주석)
+    // 학점 구간별 정보 테이블 초기화
     document.getElementById('grade-table').innerHTML = '';
 }
 
-// 학점 구간 에디터 UI 렌더링 함수 (주석)
+// 학점 구간 에디터 UI 렌더링 함수
 function renderGradeBandEditor(bands) {
     const editorDiv = document.getElementById("grade-bands-editor");
-    if (!editorDiv) return; // editorDiv 없으면 종료 (주석)
-    editorDiv.innerHTML = ''; // 기존 내용 초기화 (주석)
+    if (!editorDiv) return; // editorDiv 없으면 종료
+    editorDiv.innerHTML = ''; // 기존 내용 초기화
     bands.sort((a, b) => b.min - a.min).forEach((band, index) => {
         editorDiv.appendChild(createGradeBandRow(band, index, bands.length));
     });
@@ -158,14 +159,14 @@ function setupTabNavigation(row) {
                 const allGrades = [...document.querySelectorAll('.grade-band-grade')];
                 const allMins = [...document.querySelectorAll('.grade-band-min')];
 
-                // Shift + Tab일 경우 역방향 이동 (주석)
+                // Shift + Tab일 경우 역방향 이동
                 if (e.shiftKey) {
                     if (type === 'grade') {
                         const currentIndex = allGrades.indexOf(input);
                         if (currentIndex > 0) {
                             allGrades[currentIndex - 1].focus();
                         } else {
-                            // 첫 번째 학점명에서 Shift+Tab시 마지막 하한선으로 (주석)
+                            // 첫 번째 학점명에서 Shift+Tab시 마지막 하한선으로
                             allMins[allMins.length - 1].focus();
                         }
                     } else if (type === 'min') {
@@ -173,12 +174,12 @@ function setupTabNavigation(row) {
                         if (currentIndex > 0) {
                             allMins[currentIndex - 1].focus();
                         } else {
-                            // 첫 번째 하한선에서 Shift+Tab시 마지막 학점명으로 (주석)
+                            // 첫 번째 하한선에서 Shift+Tab시 마지막 학점명으로
                             allGrades[allGrades.length - 1].focus();
                         }
                     }
                 } else {
-                    // 기존 Tab 동작 (주석)
+                    // 기존 Tab 동작
                     if (type === 'grade') {
                         const currentIndex = allGrades.indexOf(input);
                         if (currentIndex < allGrades.length - 1) {
@@ -198,7 +199,7 @@ function setupTabNavigation(row) {
             }
         });
 
-        // 하한선 값 변경 시 자동 정렬 및 하위 구간 조정 (주석)
+        // 하한선 값 변경 시 자동 정렬 및 하위 구간 조정
         if (input.dataset.type === 'min') {
             input.addEventListener('change', () => {
                 const newValue = parseFloat(input.value);
@@ -243,10 +244,10 @@ function moveGradeBand(index, direction) {
 function addGradeBandRow() {
     const bands = getGradeBandsFromEditor();
     const lowestMin = bands.length > 0 ? bands[bands.length - 1].min : 0;
-    // 새 구간 추가 시 기본값 설정 (주석)
+    // 새 구간 추가 시 기본값 설정
     bands.push({
         grade: "",
-        min: Math.max(0, lowestMin - 10), // 이전 구간보다 10점 낮게 설정 (주석)
+        min: Math.max(0, lowestMin - 10), // 이전 구간보다 10점 낮게 설정
         color: "rgba(128,128,128,0.2)"
     });
     renderGradeBandEditor(bands);
@@ -270,7 +271,7 @@ function getGradeBandsFromEditor() {
     const bands = [];
     const defaultColors = defaultGradeBands.map(b => b.color);
 
-    // 먼저 모든 유효한 입력값을 수집 (주석)
+    // 먼저 모든 유효한 입력값을 수집
     for (let i = 0; i < rows.length; i++) {
         const gradeInput = rows[i].querySelector('.grade-band-grade');
         const minInput = rows[i].querySelector('.grade-band-min');
@@ -289,16 +290,16 @@ function getGradeBandsFromEditor() {
         }
     }
 
-    // 최소값 기준으로 내림차순 정렬 (주석)
+    // 최소값 기준으로 내림차순 정렬
     bands.sort((a, b) => b.min - a.min);
 
-    // 각 구간의 상한선을 자동으로 설정 (주석)
+    // 각 구간의 상한선을 자동으로 설정
     for (let i = 0; i < bands.length; i++) {
         if (i === 0) {
-            // 가장 높은 구간의 상한선은 100점 (주석)
+            // 가장 높은 구간의 상한선은 100점
             bands[i].max = 100;
         } else {
-            // 나머지 구간의 상한선은 바로 위 구간의 하한선 - 0.01 (주석)
+            // 나머지 구간의 상한선은 바로 위 구간의 하한선 - 0.01
             bands[i].max = bands[i - 1].min - 0.01;
         }
     }
@@ -306,12 +307,12 @@ function getGradeBandsFromEditor() {
     return bands;
 }
 
-// 기존 getGradeBands 함수를 에디터 값 사용하도록 수정 (주석)
+// 기존 getGradeBands 함수를 에디터 값 사용하도록 수정
 function getGradeBands() {
     return getGradeBandsFromEditor();
 }
 
-// 기존 getGrade 함수를 커스텀 구간 사용하도록 수정 (주석)
+// 기존 getGrade 함수를 커스텀 구간 사용하도록 수정
 function getGrade(score) {
     const bands = getGradeBands();
     for (const band of bands) {
@@ -325,7 +326,7 @@ function getGrade(score) {
     return "N/A";
 }
 
-// 페이지 로드 시 설정 불러오기 (주석)
+// 페이지 로드 시 설정 불러오기
 document.addEventListener('DOMContentLoaded', loadSettings);
 
 function normalPDF(x, mean, stddev) {
@@ -379,9 +380,11 @@ function drawChart(mean, stddev, score) {
     const ctx = document.getElementById("chartCanvas").getContext("2d");
     const currentBands = getGradeBands();
     const population = parseInt(document.getElementById("population").value) || 0;
-    const showPercentile = document.getElementById("chart-type-toggle").checked;
 
-    // 데이터 생성 (주석)
+    // showPercentile을 showChartType 변수 기반으로 결정 (주석)
+    const showPercentile = showChartType === 'percentile';
+
+    // 데이터 생성
     const data = [];
     const minScore = mean - 4 * stddev;
     const maxScore = mean + 4 * stddev;
@@ -401,29 +404,45 @@ function drawChart(mean, stddev, score) {
     const labels = data.map(d => showPercentile ? d.percentile : d.score);
     const chartData = data.map(d => d.count);
 
-    // 학점 구간 배경 플러그인 (주석)
+    // 학점 구간 배경 플러그인 수정 (주석: 구간별 정보 테이블과 동일한 로직 적용)
     const bandPlugin = {
         id: 'gradeBands',
         beforeDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
 
-            currentBands.forEach(band => {
+            currentBands.forEach((band, index) => {
                 ctx.fillStyle = band.color;
-                let xMin, xMax;
+                let xMin, xMax, bandLabel;
+
+                // 학점 구간별 정보와 동일한 로직으로 백분율 계산 (주석)
+                const topPercentile = 100 - band.min; // 입력값에서 상위 백분율로 변환 (예: 90 -> 상위 10%)
+                const nextTopPercentile = index === currentBands.length - 1 ? 100 : (100 - currentBands[index + 1].min);
+
+                // 백분율을 기반으로 실제 점수 계산 (주석)
+                const p1 = topPercentile / 100; // 0~1 범위로 변환
+                const p2 = nextTopPercentile / 100;
+
+                // 역정규분포를 사용하여 점수 계산 (주석)
+                const score1 = mean + stddev * Math.sqrt(2) * erfInv(1 - 2 * p1); // 하한 점수
+                const score2 = mean + stddev * Math.sqrt(2) * erfInv(1 - 2 * p2); // 상한 점수
 
                 if (showPercentile) {
-                    const maxPercentile = (1 - normalCDF(band.min, mean, stddev)) * 100;
-                    const minPercentile = (1 - normalCDF(band.max, mean, stddev)) * 100;
-                    xMin = x.getPixelForValue(minPercentile);
-                    xMax = x.getPixelForValue(maxPercentile);
+                    // 백분율 모드: 백분율 기준으로 구간 표시 (주석)
+                    xMin = x.getPixelForValue(topPercentile);
+                    xMax = x.getPixelForValue(nextTopPercentile);
+                    bandLabel = `${band.grade} (${Math.round(score1)}점~${Math.round(score2)}점)`;
                 } else {
-                    xMin = x.getPixelForValue(band.min);
-                    xMax = x.getPixelForValue(band.max);
+                    // 점수 모드: 실제 점수 기준으로 구간 표시 (주석)
+                    xMin = x.getPixelForValue(score1);
+                    xMax = x.getPixelForValue(score2);
+                    bandLabel = `${band.grade} (상위 ${topPercentile.toFixed(1)}%)`;
                 }
 
-                const width = xMax - xMin;
+                const width = Math.abs(xMax - xMin); // 가로 너비 절대값 계산 (주석)
                 if (width > 0) {
-                    ctx.fillRect(xMin, top, width, bottom - top);
+                    // X 좌표 순서 보정 (주석)
+                    const displayMin = Math.min(xMin, xMax);
+                    ctx.fillRect(displayMin, top, width, bottom - top);
 
                     // 구간 레이블 표시 (주석)
                     ctx.save();
@@ -431,27 +450,25 @@ function drawChart(mean, stddev, score) {
                     ctx.font = '12px Arial';
                     ctx.textAlign = 'center';
                     const labelY = top + 20;
-                    const centerX = xMin + width / 2;
-                    const percentileText = showPercentile ?
-                        `(상위 ${(1 - normalCDF(band.min, mean, stddev)) * 100}%)` :
-                        `(${band.min}점~${band.max}점)`;
-                    ctx.fillText(`${band.grade} ${percentileText}`, centerX, labelY);
+                    const centerX = displayMin + width / 2;
+                    ctx.fillText(bandLabel, centerX, labelY);
                     ctx.restore();
                 }
             });
         }
     };
 
-    // 내 점수 표시 선 플러그인 (주석)
+    // 내 점수 표시 선 플러그인 수정 (주석: 점수와 백분율 동시 표시)
     const scoreLinePlugin = {
         id: 'userScoreLine',
         afterDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
             const xPos = x.getPixelForValue(showPercentile ?
-                (1 - normalCDF(score, mean, stddev)) * 100 :
+                (1 - normalCDF(score, mean, stddev)) * 100 : 
                 score
             );
 
+            // 세로선 그리기
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(xPos, top);
@@ -460,14 +477,20 @@ function drawChart(mean, stddev, score) {
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // 선 위에 텍스트 표시 (주석)
+            // 텍스트 표시 설정
             ctx.fillStyle = 'red';
             ctx.textAlign = 'center';
+            ctx.font = '12px Arial';
+
+            // 점수와 백분율 모두 표시
             const percentile = (1 - normalCDF(score, mean, stddev)) * 100;
-            const labelText = showPercentile ?
-                `내 점수: ${score}점` :
-                `상위 ${percentile.toFixed(1)}%`;
-            ctx.fillText(labelText, xPos, top - 5);
+            const scoreText = `${score}점`;
+            const percentileText = `상위 ${percentile.toFixed(1)}%`;
+
+            // 두 줄로 텍스트 표시
+            ctx.fillText(scoreText, xPos, top - 20);
+            ctx.fillText(percentileText, xPos, top - 5);
+
             ctx.restore();
         }
     };
@@ -548,8 +571,11 @@ function drawChart(mean, stddev, score) {
     lastChartData = { mean, stddev, score };
 }
 
-// 차트 타입 토글 이벤트 리스너 (주석)
+// 차트 타입 토글 이벤트 리스너
 document.getElementById("chart-type-toggle").addEventListener("change", function () {
+    // 체크박스 상태에 따라 차트 타입 설정 (주석)
+    showChartType = this.checked ? 'percentile' : 'score';
+
     if (lastChartData) {
         drawChart(lastChartData.mean, lastChartData.stddev, lastChartData.score);
     }
@@ -560,14 +586,46 @@ function renderGradeTable(mean, stddev, population) {
     const tableContainer = document.getElementById("grade-table");
     if (!tableContainer) return;
 
-    let html = `<h3 class="text-lg font-semibold mb-1">학점 구간별 정보</h3>`;
-    html += `<table class=\"min-w-full border text-center text-sm\">\n    <thead class=\"bg-blue-100\">\n      <tr>\n        <th class=\"border px-2 py-1\">학점</th>\n        <th class=\"border px-2 py-1\">최소 점수</th>\n        <th class=\"border px-2 py-1\">최대 점수</th>\n        <th class=\"border px-2 py-1\">상위 백분율(%)</th>\n      </tr>\n    </thead>\n    <tbody>`;
+    let html = `<h3 class="text-lg font-semibold mb-1">학점 구간별 정보</h3>
+    <p class="text-sm text-gray-600 mb-2">* 하한선은 상위 백분율을 의미합니다. (예: 90은 상위 10%를 의미)</p>`;
 
-    bands.forEach(band => {
-        const percentile = 1 - normalCDF(band.min, mean, stddev);
-        const percentileDisplay = Math.floor(percentile * 100000) / 1000;
-        html += `<tr>\n      <td class=\"border px-2 py-1\">${band.grade}</td>\n      <td class=\"border px-2 py-1\">${band.min.toFixed(2)}</td>\n      <td class=\"border px-2 py-1\">${band.max.toFixed(2)}</td>\n      <td class=\"border px-2 py-1\">${percentileDisplay}</td>\n    </tr>`;
+    html += `<table class="min-w-full border text-center text-sm">
+    <thead class="bg-blue-100">
+      <tr>
+        <th class="border px-2 py-1">학점</th>
+        <th class="border px-2 py-1">상위 백분율</th>
+        <th class="border px-2 py-1">예상 점수 구간</th>
+        <th class="border px-2 py-1">예상 인원</th>
+      </tr>
+    </thead>
+    <tbody>`;
+
+    bands.forEach((band, index) => {
+        // 현재 구간의 상위 백분율 계산 (주석: 입력값이 이미 백분율)
+        const topPercentile = 100 - band.min; // 예: 입력 90은 상위 10%를 의미
+
+        // 다음 구간의 상위 백분율 계산 (주석: 마지막 구간이면 100% 사용)
+        const nextTopPercentile = index === bands.length - 1 ? 100 : (100 - bands[index + 1].min);
+
+        // 백분율을 기반으로 실제 점수 계산 (주석)
+        const p1 = topPercentile / 100; // 현재 구간의 백분율을 0~1 범위로 변환
+        const p2 = nextTopPercentile / 100; // 다음 구간의 백분율을 0~1 범위로 변환
+
+        // 역정규분포를 사용하여 점수 계산 (주석)
+        const score1 = mean + stddev * Math.sqrt(2) * erfInv(1 - 2 * p1);
+        const score2 = mean + stddev * Math.sqrt(2) * erfInv(1 - 2 * p2);
+
+        // 예상 인원수 계산 (주석: 현재 구간의 백분율 차이 * 전체 인원수)
+        const expectedCount = Math.round((nextTopPercentile - topPercentile) * population / 100);
+
+        html += `<tr>
+            <td class="border px-2 py-1">${band.grade}</td>
+            <td class="border px-2 py-1">상위 ${topPercentile.toFixed(1)}%</td>
+            <td class="border px-2 py-1">${Math.round(score1)}점 ~ ${Math.round(score2)}점</td>
+            <td class="border px-2 py-1">${expectedCount}명</td>
+        </tr>`;
     });
+
     html += `</tbody></table>`;
     tableContainer.innerHTML = html;
 }
