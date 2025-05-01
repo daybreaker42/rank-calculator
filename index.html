@@ -2,112 +2,54 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Standard Distribution Rank Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>표준분포 학점 계산기</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-100 p-6">
-  <div class="max-w-3xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
-    <h1 class="text-2xl font-bold mb-4">🎯 정규분포 기반 등수 계산기</h1>
+<body class="bg-gray-50 min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 md:p-6">
+    <h1 class="text-2xl sm:text-3xl font-bold text-blue-700 mb-4">표준분포 학점 계산기</h1>
 
-    <div class="grid grid-cols-2 gap-4 mb-6">
-      <input id="mean" type="number" placeholder="평균 (μ)" class="p-2 border rounded" />
-      <input id="stddev" type="number" placeholder="표준편차 (σ)" class="p-2 border rounded" />
-      <input id="n" type="number" placeholder="모집단 수 (n)" class="p-2 border rounded" />
-      <input id="score" type="number" placeholder="내 점수 (x)" class="p-2 border rounded" />
+    <!-- grid-cols-1로 모바일에서 한 줄, md:grid-cols-2로 데스크톱/태블릿에서 두 줄로 배치 -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 w-full max-w-xs sm:max-w-md md:max-w-xl">
+        <label for="mean" class="flex items-center space-x-2">
+            <span>평균(μ)</span>
+            <input id="mean" type="number" placeholder="예: 70" class="input" />
+        </label>
+        <label for="stddev" class="flex items-center space-x-2">
+            <span>표준편차(σ)</span>
+            <input id="stddev" type="number" placeholder="예: 10" class="input" />
+        </label>
+        <label for="population" class="flex items-center space-x-2">
+            <span>전체 인원수(N)</span>
+            <input id="population" type="number" placeholder="예: 100" class="input" />
+        </label>
+        <label for="score" class="flex items-center space-x-2">
+            <span>내 점수(X)</span>
+            <input id="score" type="number" placeholder="예: 85" class="input" />
+        </label>
     </div>
-    <button onclick="calculate()" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">계산하기</button>
 
-    <div class="mt-6">
-      <canvas id="chart" height="100"></canvas>
+    <button onclick="calculateAndDraw()"
+        class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto">계산하기</button>
+
+    <!-- 학점 구간별 경계값/상위% 표 영역 추가 (버튼 아래에 위치) -->
+    <div id="grade-table"></div>
+    
+    <!-- 결과 영역도 반응형 max-width 적용 -->
+    <div class="mt-6 w-full max-w-xs sm:max-w-md md:max-w-2xl">
+        <canvas id="chartCanvas"></canvas>
     </div>
 
-    <div id="result" class="mt-6 text-xl font-semibold text-gray-700"></div>
-  </div>
+    <div id="result" class="mt-6 text-lg font-medium text-gray-800"></div>
 
-  <script>
-    let chart;
-
-    function normalPDF(x, mean, std) {
-      return (1 / (std * Math.sqrt(2 * Math.PI))) *
-             Math.exp(-0.5 * Math.pow((x - mean) / std, 2));
-    }
-
-    function normalCDF(z) {
-      // 근사 계산
-      return 0.5 * (1 + erf(z / Math.sqrt(2)));
-    }
-
-    function erf(x) {
-      // 수치 해석용 erf 근사
-      const sign = x >= 0 ? 1 : -1;
-      x = Math.abs(x);
-      const a1 = 0.254829592,
-            a2 = -0.284496736,
-            a3 = 1.421413741,
-            a4 = -1.453152027,
-            a5 = 1.061405429,
-            p = 0.3275911;
-
-      const t = 1 / (1 + p * x);
-      const y = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
-      return sign * y;
-    }
-
-    function calculate() {
-      const mean = parseFloat(document.getElementById("mean").value);
-      const std = parseFloat(document.getElementById("stddev").value);
-      const n = parseInt(document.getElementById("n").value);
-      const x = parseFloat(document.getElementById("score").value);
-
-      if (isNaN(mean) || isNaN(std) || isNaN(n) || isNaN(x)) {
-        alert("모든 값을 정확히 입력해주세요!");
-        return;
-      }
-
-      const z = (x - mean) / std;
-      const p = normalCDF(z);
-      const rank = Math.round(n * (1 - p));
-
-      document.getElementById("result").innerText = `✨ 내 점수는 상위 ${((1 - p) * 100).toFixed(2)}%에 해당하며, 예상 등수는 약 ${rank}등입니다.`;
-
-      // 그래프 재생성
-      const xValues = [], yValues = [];
-      for (let i = mean - 4 * std; i <= mean + 4 * std; i += std / 20) {
-        xValues.push(i.toFixed(2));
-        yValues.push(normalPDF(i, mean, std));
-      }
-
-      if (chart) chart.destroy();
-      const ctx = document.getElementById("chart").getContext("2d");
-      chart = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: xValues,
-          datasets: [{
-            label: '정규분포',
-            data: yValues,
-            borderColor: 'blue',
-            borderWidth: 2,
-            fill: false
-          },
-          {
-            label: '내 점수',
-            data: xValues.map(val => parseFloat(val) === x ? normalPDF(x, mean, std) : null),
-            pointBackgroundColor: 'red',
-            pointRadius: 6,
-            type: 'scatter'
-          }]
-        },
-        options: {
-          responsive: true,
-          scales: {
-            y: { beginAtZero: true }
-          }
+    <style>
+        .input {
+            /* Tailwind @apply는 빌드 환경에서만 동작하므로, 실제 배포시에는 인라인 클래스를 권장 */
+            @apply border border-gray-300 p-2 rounded w-full;
         }
-      });
-    }
-  </script>
+    </style>
+
+    <script src="script.js"></script>
 </body>
 </html>
