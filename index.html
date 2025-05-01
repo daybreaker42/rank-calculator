@@ -33,30 +33,50 @@
 
     <div class="flex gap-4 w-full max-w-xs sm:max-w-md justify-center">
         <button onclick="calculateAndDraw()"
-            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto">계산하기</button>
-        <button onclick="resetAllData()"
-            class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 w-full sm:w-auto">초기화</button>
-        </div>
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 w-full sm:w-auto">
+            계산하기
+        </button>
+        <button onclick="clearInputValues()" 
+            class="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 w-full sm:w-auto">
+            값 비우기
+        </button>
+    </div>
 
     <!-- 결과 영역도 반응형 max-width 적용 -->
     <div class="mt-6 w-full max-w-xs sm:max-w-md md:max-w-2xl">
-        <canvas id="chartCanvas"></canvas>
+        <!-- 차트 타입 선택 토글 추가 -->
+        <div class="flex items-center justify-end mb-2 gap-2">
+            <span class="text-sm text-gray-700">X축:</span>
+            <label class="inline-flex items-center cursor-pointer">
+                <span class="mr-2 text-sm text-gray-700">점수</span>
+                <div class="relative">
+                    <input type="checkbox" id="chart-type-toggle" class="sr-only peer">
+                    <div
+                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
+                    </div>
+                </div>
+                <span class="ml-2 text-sm text-gray-700">상위 백분율</span>
+            </label>
+        </div>
+        <!-- 차트 컨테이너에 고정 높이 추가 (주석) -->
+        <div class="relative h-[400px]">
+            <canvas id="chartCanvas"></canvas>
+        </div>
     </div>
         
-        
-        <!-- 결과 표시 영역을 버튼 바로 아래로 이동 -->
-        <div id="result" class="mt-4 text-lg font-medium text-gray-800 text-center w-full max-w-xs sm:max-w-md md:max-w-xl">
-        </div>
+    <!-- 결과 표시 영역을 버튼 바로 아래로 이동 -->
+    <div id="result" class="mt-4 text-lg font-medium text-gray-800 text-center w-full max-w-xs sm:max-w-md md:max-w-xl">
+    </div>
 
     <!-- 학점 구간 커스텀 UI 추가 -->
     <div class="mt-8 w-full max-w-xs sm:max-w-md md:max-w-xl">
         <h2 class="text-xl font-semibold mb-2">학점 구간 설정</h2>
         <!-- 컬럼 헤더 추가 -->
         <div class="grid grid-cols-4 gap-2 mb-2 px-2">
-            <div class="font-medium text-gray-700">학점명</div>
-            <div class="font-medium text-gray-700">하한선</div>
-            <div class="font-medium text-gray-700">순서 변경</div>
-            <div class="font-medium text-gray-700">삭제</div>
+            <div class="font-medium text-gray-700 text-center">학점명</div>
+            <div class="font-medium text-gray-700 text-center">하한선</div>
+            <div class="font-medium text-gray-700 text-center">순서 변경</div>
+            <div class="font-medium text-gray-700 text-center">삭제</div>
         </div>
         <div id="grade-bands-editor" class="space-y-2">
             <!-- JS에서 동적으로 학점 구간 입력 행 생성 -->
@@ -67,6 +87,12 @@
     
     <!-- 학점 구간별 경계값/상위% 표 영역 -->
     <div id="grade-table" class="mt-4 w-full max-w-xs sm:max-w-md md:max-w-xl"></div>
+
+    <div class="mt-4 w-full max-w-xs sm:max-w-md text-center">
+        <button onclick="resetAllData()" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
+            설정 초기화
+        </button>
+    </div>
 
     <style>
         /* input 기본 스타일 (주석) */
@@ -113,8 +139,8 @@
     <!-- Footer 추가 -->
     <footer class="mt-8 pb-4 text-center text-gray-600 text-sm">
         <p>Made by HanSJ</p>
-        <p>Contact: <a href="mailto:juen12300039@gmail.com"
-                class="text-blue-600 hover:text-blue-800">juen12300039@gmail.com</a></p>
+        <p>Contact: <a href="mailto:han123400040@gmail.com" class="text-blue-600 hover:text-blue-800">han123400040@gmail.com</a>
+        </p>
     </footer>
     <script src="script.js"></script>
 </body>

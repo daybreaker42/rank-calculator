@@ -1,17 +1,19 @@
 let chart = null;
+let lastChartData = null; // 전역 변수로 차트 설정 저장 (주석)
+
 // localStorage 키 정의 (주석: 설정 저장을 위한 고유 키)
 const LS_SETTINGS_KEY = 'gradeCalculatorSettings_v1'; // 버전 명시하여 추후 호환성 관리 용이 (주석)
 
 // 기본 학점 구간 정의 (주석: 초기값 또는 저장된 설정 없을 시 사용)
 const defaultGradeBands = [
     // A학점 30% (A+ 10%, A0 20%), B학점 40% (B+ 20%, B0 20%), C학점 이하 30% (C+ 15%, C0 10%, D 이하 5%) (주석)
-    { grade: "A+", min: 90, max: 100, color: "rgba(37,99,235,0.2)" },
-    { grade: "A0", min: 85, max: 89.99, color: "rgba(56,189,248,0.2)" },
-    { grade: "B+", min: 80, max: 84.99, color: "rgba(22,163,74,0.2)" },
-    { grade: "B0", min: 75, max: 79.99, color: "rgba(132,204,22,0.2)" },
-    { grade: "C+", min: 70, max: 74.99, color: "rgba(234,179,8,0.2)" },
-    { grade: "C0", min: 65, max: 69.99, color: "rgba(249,115,22,0.2)" },
-    { grade: "D or lower", min: 0, max: 64.99, color: "rgba(220,38,38,0.2)" }
+    { grade: "A+", min: 90, max: 100, color: "rgba(37,99,235,0.2)" }, // A+ 구간
+    { grade: "A0", min: 80, max: 89.99, color: "rgba(56,189,248,0.2)" }, // A0 구간
+    { grade: "B+", min: 60, max: 79.99, color: "rgba(22,163,74,0.2)" }, // B+ 구간
+    { grade: "B0", min: 40, max: 59.99, color: "rgba(132,204,22,0.2)" }, // B0 구간
+    { grade: "C+", min: 25, max: 39.99, color: "rgba(234,179,8,0.2)" }, // C+ 구간
+    { grade: "C0", min: 15, max: 24.99, color: "rgba(249,115,22,0.2)" }, // C0 구간
+    { grade: "D or lower", min: 0, max: 14.99, color: "rgba(220,38,38,0.2)" }  // D 이하 구간
 ];
 
 // localStorage에서 설정 불러오기 함수 (주석)
@@ -84,6 +86,27 @@ function resetAllData() {
     }
 }
 
+// 입력값만 초기화하는 함수 (주석: 설정은 유지)
+function clearInputValues() {
+    // 입력 필드 초기화 (주석)
+    document.getElementById('mean').value = '';
+    document.getElementById('stddev').value = '';
+    document.getElementById('population').value = '';
+    document.getElementById('score').value = '';
+
+    // 결과 영역 초기화 (주석)
+    document.getElementById('result').innerHTML = '';
+
+    // 차트 초기화 (주석)
+    if (window.myChart) {
+        window.myChart.destroy();
+        window.myChart = null;
+    }
+
+    // 학점 구간별 정보 테이블 초기화 (주석)
+    document.getElementById('grade-table').innerHTML = '';
+}
+
 // 학점 구간 에디터 UI 렌더링 함수 (주석)
 function renderGradeBandEditor(bands) {
     const editorDiv = document.getElementById("grade-bands-editor");
@@ -103,13 +126,12 @@ function createGradeBandRow(band, index, totalRows) {
     row.className = 'grid grid-cols-4 gap-2 items-center grade-band-row';
     row.dataset.index = index;
 
-    // 순서 변경 버튼을 포함한 새로운 레이아웃
     row.innerHTML = `
         <input type="text" placeholder="학점명 (예: A+)" value="${band.grade || ''}" 
             class="input grade-band-grade" data-type="grade" aria-label="학점명 ${index + 1}">
         <input type="number" step="0.01" placeholder="최소 점수" value="${band.min}" 
             class="input grade-band-min" data-type="min" aria-label="최소 점수 ${index + 1}">
-        <div class="flex gap-1">
+        <div class="flex justify-between">
             <button onclick="moveGradeBand(${index}, 'up')" class="text-blue-500 hover:text-blue-700 px-2" 
                 ${index === 0 ? 'disabled' : ''} aria-label="위로 이동">↑</button>
             <button onclick="moveGradeBand(${index}, 'down')" class="text-blue-500 hover:text-blue-700 px-2" 
@@ -325,60 +347,111 @@ function erf(x) {
   return sign * y;
 }
 
-// drawChart 함수 수정 (주석: 막대 그래프(히스토그램)로 변경, y축은 예상 인원수)
-function drawChart(mean, stddev, score) {
-    const ctx = document.getElementById("chartCanvas").getContext("2d");
-    const currentBands = getGradeBands(); // 현재 커스텀 학점 구간 (주석)
-    const population = parseInt(document.getElementById("population").value) || 0; // 전체 인원수 (주석)
+// erf의 역함수 추가 (주석: 백분율을 점수로 변환하기 위해 필요)
+function erfInv(x) {
+    const a = 0.147;
+    let y, z;
 
-    const scores = []; // x축: 점수 값 (주석)
-    const estimatedCounts = []; // y축: 해당 점수 구간의 예상 인원수 (주석)
-
-    // 그래프 x축(점수) 범위 결정 (주석)
-    const xMinScore = Math.floor(Math.max(0, mean - 4 * stddev)); // 최소 점수 (0점 이상, 정수) (주석)
-    const xMaxScore = Math.ceil(Math.max(100, mean + 4 * stddev)); // 최대 점수 (100점 이상, 정수) (주석)
-
-    // 각 점수(정수 단위) 구간별 예상 인원수 계산 (주석)
-    for (let s = xMinScore; s <= xMaxScore; s++) {
-        scores.push(s); // x축 점수 추가 (주석)
-        // 점수 s를 중심으로 하는 1점 구간(s-0.5 ~ s+0.5)의 확률 계산 (주석)
-        const probability = normalCDF(s + 0.5, mean, stddev) - normalCDF(s - 0.5, mean, stddev);
-        // 해당 구간의 예상 인원수 계산 (소수점 나올 수 있음) (주석)
-        const count = probability * population;
-        estimatedCounts.push(count); // y축 예상 인원수 추가 (주석)
+    if (x >= 1) {
+        return Infinity;
+    } else if (x <= -1) {
+        return -Infinity;
     }
 
-    // 학점 구간 배경 플러그인 (주석: 점수 기준, 막대 뒤에 그려지도록 beforeDatasetsDraw 사용)
+    const signX = x < 0 ? -1 : 1;
+    const absX = Math.abs(x);
+
+    if (absX <= 0.7) {
+        const z = absX * absX;
+        y = absX * (((1.6112374 * z + 4.0676275) * z + 3.0899424) * z + 1)
+            / (((1.7027532 * z + 3.7108478) * z + 1.5119628) * z + 1);
+    } else {
+        const z = Math.sqrt(-Math.log((1 - absX) / 2));
+        y = (((2.3212128 * z + 4.8501413) * z + 2.6977039) * z - 0.3897065)
+            / ((1.8212559 * z + 3.2577336) * z + 1);
+    }
+
+    return signX * y;
+}
+
+// drawChart 함수 수정 (주석: 정규분포 데이터 생성 로직 수정)
+function drawChart(mean, stddev, score) {
+    const ctx = document.getElementById("chartCanvas").getContext("2d");
+    const currentBands = getGradeBands();
+    const population = parseInt(document.getElementById("population").value) || 0;
+    const showPercentile = document.getElementById("chart-type-toggle").checked;
+
+    // 데이터 생성 (주석)
+    const data = [];
+    const minScore = mean - 4 * stddev;
+    const maxScore = mean + 4 * stddev;
+    const step = (maxScore - minScore) / 200;
+
+    for (let x = minScore; x <= maxScore; x += step) {
+        const density = normalPDF(x, mean, stddev);
+        const percentile = (1 - normalCDF(x, mean, stddev)) * 100;
+        data.push({
+            score: x,
+            percentile: percentile,
+            count: density * population * step
+        });
+    }
+
+    // X축 데이터 설정 (주석: 토글 상태에 따라 점수 또는 백분율 사용)
+    const labels = data.map(d => showPercentile ? d.percentile : d.score);
+    const chartData = data.map(d => d.count);
+
+    // 학점 구간 배경 플러그인 (주석)
     const bandPlugin = {
-        id: 'gradeBandsScore', // ID 변경 (주석)
-        beforeDatasetsDraw(chart) { // 막대보다 먼저 그려짐 (주석)
+        id: 'gradeBands',
+        beforeDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
+
             currentBands.forEach(band => {
                 ctx.fillStyle = band.color;
-                const xMinPixel = x.getPixelForValue(band.min);
-                const xMaxPixel = x.getPixelForValue(band.max);
-                const chartLeft = x.left;
-                const chartRight = x.right;
+                let xMin, xMax;
 
-                const startPixel = Math.max(xMinPixel, chartLeft);
-                const endPixel = Math.min(xMaxPixel, chartRight);
-                // 주석: 막대 그래프에서는 각 막대의 경계에 맞춰 그리는 것이 더 자연스러울 수 있음
-                // 여기서는 기존 방식 유지 (배경 역할)
-                const width = Math.max(0, endPixel - startPixel);
+                if (showPercentile) {
+                    const maxPercentile = (1 - normalCDF(band.min, mean, stddev)) * 100;
+                    const minPercentile = (1 - normalCDF(band.max, mean, stddev)) * 100;
+                    xMin = x.getPixelForValue(minPercentile);
+                    xMax = x.getPixelForValue(maxPercentile);
+                } else {
+                    xMin = x.getPixelForValue(band.min);
+                    xMax = x.getPixelForValue(band.max);
+                }
 
+                const width = xMax - xMin;
                 if (width > 0) {
-                    ctx.fillRect(startPixel, top, width, bottom - top);
+                    ctx.fillRect(xMin, top, width, bottom - top);
+
+                    // 구간 레이블 표시 (주석)
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(0,0,0,0.7)';
+                    ctx.font = '12px Arial';
+                    ctx.textAlign = 'center';
+                    const labelY = top + 20;
+                    const centerX = xMin + width / 2;
+                    const percentileText = showPercentile ?
+                        `(상위 ${(1 - normalCDF(band.min, mean, stddev)) * 100}%)` :
+                        `(${band.min}점~${band.max}점)`;
+                    ctx.fillText(`${band.grade} ${percentileText}`, centerX, labelY);
+                    ctx.restore();
                 }
             });
         }
     };
 
-    // 내 점수 표시 선 플러그인 (주석: 점수 기준, 막대 위에 그려지도록 afterDatasetsDraw 사용)
+    // 내 점수 표시 선 플러그인 (주석)
     const scoreLinePlugin = {
-        id: 'userScoreLine', // ID 변경 (주석)
-        afterDatasetsDraw(chart) { // 막대보다 나중에 그려짐 (주석)
+        id: 'userScoreLine',
+        afterDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
-            const xPos = x.getPixelForValue(score); // 사용자의 점수 위치 (주석)
+            const xPos = x.getPixelForValue(showPercentile ?
+                (1 - normalCDF(score, mean, stddev)) * 100 :
+                score
+            );
+
             ctx.save();
             ctx.beginPath();
             ctx.moveTo(xPos, top);
@@ -387,28 +460,31 @@ function drawChart(mean, stddev, score) {
             ctx.lineWidth = 2;
             ctx.stroke();
 
-            // 선 위에 점수 텍스트 표시 (선택 사항) (주석)
+            // 선 위에 텍스트 표시 (주석)
             ctx.fillStyle = 'red';
             ctx.textAlign = 'center';
-            ctx.fillText(`내 점수: ${score.toFixed(2)}`, xPos, top - 5); // 선 위에 표시 (주석)
+            const percentile = (1 - normalCDF(score, mean, stddev)) * 100;
+            const labelText = showPercentile ?
+                `내 점수: ${score}점` :
+                `상위 ${percentile.toFixed(1)}%`;
+            ctx.fillText(labelText, xPos, top - 5);
             ctx.restore();
         }
     };
 
-    // 기존 차트 파괴 및 재생성 (주석)
     if (chart) chart.destroy();
     chart = new Chart(ctx, {
-        type: 'bar', // 주석: 차트 타입을 'bar'로 변경
+        type: 'bar',
         data: {
-            labels: scores, // x축 레이블: 점수 (주석)
+            labels: labels,
             datasets: [{
-                label: '예상 인원수', // 데이터셋 레이블 변경 (주석)
-                data: estimatedCounts, // y축 데이터: 예상 인원수 (주석)
-                backgroundColor: 'rgba(59, 130, 246, 0.5)', // 막대 색상 (주석)
-                borderColor: 'rgba(59, 130, 246, 1)', // 막대 테두리 색상 (주석)
+                label: '예상 인원수',
+                data: chartData,
+                backgroundColor: 'rgba(59, 130, 246, 0.5)',
+                borderColor: 'rgba(59, 130, 246, 1)',
                 borderWidth: 1,
-                barPercentage: 1.0, // 막대 간격 없애기 (히스토그램처럼) (주석)
-                categoryPercentage: 1.0, // 막대 간격 없애기 (히스토그램처럼) (주석)
+                barPercentage: 1.0,
+                categoryPercentage: 1.0,
             }]
         },
         options: {
@@ -416,62 +492,68 @@ function drawChart(mean, stddev, score) {
             maintainAspectRatio: false,
             scales: {
                 x: {
-                    type: 'linear', // 선형 축 (점수) (주석)
-                    offset: false, // 막대가 눈금 사이에 위치하지 않도록 (주석)
+                    type: 'linear',
+                    offset: false,
+                    reverse: showPercentile,
                     title: {
                         display: true,
-                        text: '점수' // x축 제목 (주석)
+                        text: showPercentile ? '상위 백분율 (%)' : '점수'
                     },
-                    min: xMinScore, // 계산된 최소 점수 적용 (주석)
-                    max: xMaxScore, // 계산된 최대 점수 적용 (주석)
+                    min: showPercentile ? 0 : minScore,
+                    max: showPercentile ? 100 : maxScore,
                     ticks: {
-                        stepSize: 5, // 5점 단위 눈금 제안 (가독성) (주석)
-                        // autoSkip: true,
-                        // maxTicksLimit: 20
+                        maxTicksLimit: 10,
+                        callback: function (value) {
+                            if (showPercentile) {
+                                return '상위 ' + value.toFixed(0) + '%';
+                            }
+                            return value.toFixed(0) + '점';
+                        }
                     }
                 },
                 y: {
-                    display: true, // y축 표시 (주석)
+                    display: true,
                     title: {
                         display: true,
-                        text: '예상 인원수' // y축 제목 변경 (주석)
+                        text: '예상 인원수'
                     },
-                    beginAtZero: true, // y축은 0부터 시작 (주석)
-                    ticks: {
-                        // 예상 인원수가 정수가 아닐 수 있으므로, 필요시 포맷팅 (주석)
-                        // callback: function(value) { return Number.isInteger(value) ? value : value.toFixed(1); },
-                        maxTicksLimit: 8 // y축 눈금 개수 제한 (주석)
-                    }
+                    beginAtZero: true
                 }
             },
             plugins: {
-                legend: {
-                    display: true, // 범례 표시 (주석)
-                    position: 'top',
-                },
                 tooltip: {
-                    enabled: true, // 툴팁 활성화 (주석)
-                    mode: 'index', // 동일 인덱스(점수)의 모든 데이터 표시 (주석)
+                    enabled: true,
+                    mode: 'index',
                     intersect: false,
                     callbacks: {
-                        // 툴팁 내용 커스터마이즈 (주석)
                         title: function (tooltipItems) {
-                            // 툴팁 제목: 점수 구간 (주석)
-                            const score = tooltipItems[0].parsed.x;
-                            return `${(score - 0.5).toFixed(1)} ~ ${(score + 0.5).toFixed(1)}점 구간`;
+                            const value = tooltipItems[0].parsed.x;
+                            if (showPercentile) {
+                                return `상위 ${value.toFixed(1)}% 구간`;
+                            }
+                            return `${value.toFixed(1)}점 구간`;
                         },
                         label: function (tooltipItem) {
-                            // 툴팁 내용: 예상 인원수 (주석)
                             const count = tooltipItem.parsed.y;
-                            return `예상 인원: ${count.toFixed(2)}명`; // 소수점 2자리 (주석)
+                            return `예상 인원: ${count.toFixed(1)}명`;
                         }
                     }
                 }
             }
         },
-        plugins: [bandPlugin, scoreLinePlugin] // 플러그인 등록 (주석)
+        plugins: [bandPlugin, scoreLinePlugin]
     });
+
+    // 차트 데이터 저장 (주석: 토글 시 사용)
+    lastChartData = { mean, stddev, score };
 }
+
+// 차트 타입 토글 이벤트 리스너 (주석)
+document.getElementById("chart-type-toggle").addEventListener("change", function () {
+    if (lastChartData) {
+        drawChart(lastChartData.mean, lastChartData.stddev, lastChartData.score);
+    }
+});
 
 function renderGradeTable(mean, stddev, population) {
     const bands = getGradeBands();
