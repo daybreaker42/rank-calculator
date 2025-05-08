@@ -89,3 +89,62 @@ function computeScorePercentileRange(mean, stddev, bandMax, bandMin){
 
     return [roundedTopPercentile, roundedNextTopPercentile, roundedMinScore, roundedMaxScore];
 }
+
+// 범위 제한을 적용한 정규분포 함수들 추가
+function truncatedNormalPDF(x, mean, stddev, minScore, maxScore) {
+  // 범위를 벗어나면 0 반환
+  if (x < minScore || x > maxScore) return 0;
+
+  // 기본 정규분포 확률밀도함수 계산
+  const pdf = normalPDF(x, mean, stddev);
+
+  // 전체 분포 중 minScore~maxScore 사이의 확률만 남김
+  const normalizingConstant = normalCDF(maxScore, mean, stddev) - normalCDF(minScore, mean, stddev);
+
+  // 정규화된 확률밀도 반환
+  return normalizingConstant > 0 ? pdf / normalizingConstant : 0;
+}
+
+function truncatedNormalCDF(x, mean, stddev, minScore, maxScore) {
+  // 범위를 벗어나는 경우 처리
+  if (x <= minScore) return 0;
+  if (x >= maxScore) return 1;
+
+  // 원래 분포의 CDF 계산
+  const originalCDF = normalCDF(x, mean, stddev);
+  const minCDF = normalCDF(minScore, mean, stddev);
+  const maxCDF = normalCDF(maxScore, mean, stddev);
+
+  // 범위 내에서 정규화된 CDF 값 계산
+  return (originalCDF - minCDF) / (maxCDF - minCDF);
+}
+
+// 점수 범위를 고려한 백분위수 계산 함수
+function calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) {
+  // 범위 제한이 설정되지 않은 경우
+  if (isNaN(minScore) || isNaN(maxScore)) {
+    return 1 - normalCDF(score, mean, stddev);
+  }
+
+  // 범위 제한이 있는 경우 조정된 백분위수 계산
+  const truncatedCDF = truncatedNormalCDF(score, mean, stddev, minScore, maxScore);
+  return 1 - truncatedCDF;
+}
+
+// 범위를 고려한 점수-백분위 변환 함수
+function computeScorePercentileRangeWithLimits(mean, stddev, bandMax, bandMin, minScore, maxScore) {
+  // 기본 계산 결과 가져오기
+  const [topPercentile, nextTopPercentile, calculatedMaxScore, calculatedMinScore] =
+    computeScorePercentileRange(mean, stddev, bandMax, bandMin);
+
+  // 범위 제한이 없으면 기존 결과 반환
+  if (isNaN(minScore) || isNaN(maxScore)) {
+    return [topPercentile, nextTopPercentile, calculatedMinScore, calculatedMaxScore];
+  }
+
+  // 범위 제한 적용
+  const limitedMinScore = Math.max(calculatedMinScore, minScore);
+  const limitedMaxScore = Math.min(calculatedMaxScore, maxScore);
+
+  return [topPercentile, nextTopPercentile, limitedMinScore, limitedMaxScore];
+}

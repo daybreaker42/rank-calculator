@@ -61,6 +61,20 @@
             <span class="w-16">내 점수(X)</span>
             <input id="score" type="tel" placeholder="예: 85" class="input" />
         </label>
+        <!-- 최소/최대 점수 입력 필드 추가 -->
+        <label for="min-score" class="flex items-center space-x-2">
+            <span class="w-16">최소 점수</span>
+            <input id="min-score" type="tel" placeholder="예: 0" class="input" />
+        </label>
+        <label for="max-score" class="flex items-center space-x-2">
+            <span class="w-16">최대 점수</span>
+            <input id="max-score" type="tel" placeholder="예: 100" class="input" />
+        </label>
+        </div>
+        
+        <!-- 점수 제한에 대한 설명 추가 -->
+        <div class="mb-4 w-full max-w-xs sm:max-w-md md:max-w-xl text-sm text-gray-700 dark:text-gray-300">
+            <p>* 최소/최대 점수를 입력하면 해당 범위 내에서 정규분포를 조정하여 등수와 학점을 계산합니다.</p>
     </div>
 
     <div class="flex gap-4 w-full max-w-xs sm:max-w-md justify-center">

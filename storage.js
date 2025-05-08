@@ -12,6 +12,11 @@ function loadSettings() {
             document.getElementById("stddev").value = settings.stddev || '';
             document.getElementById("population").value = settings.population || '';
             document.getElementById("score").value = settings.score || '';
+
+            // 최소/최대 점수 필드 복원 추가
+            document.getElementById("min-score").value = settings.minScore || '';
+            document.getElementById("max-score").value = settings.maxScore || '';
+
             // 저장된 학점 구간이 있으면 사용, 없으면 기본값 사용
             renderGradeBandEditor(settings.gradeBands && settings.gradeBands.length > 0 ? settings.gradeBands : defaultGradeBands);
         } else {

@@ -27,6 +27,8 @@ function resetAllData() {
         document.getElementById('stddev').value = '';
         document.getElementById('population').value = '';
         document.getElementById('score').value = '';
+        document.getElementById('min-score').value = ''; // 추가
+        document.getElementById('max-score').value = ''; // 추가
 
         // 차트 초기화
         const ctx = document.getElementById('chartCanvas').getContext('2d');
@@ -50,6 +52,8 @@ function clearInputValues() {
     document.getElementById('stddev').value = '';
     document.getElementById('population').value = '';
     document.getElementById('score').value = '';
+    document.getElementById('min-score').value = ''; // 추가
+    document.getElementById('max-score').value = ''; // 추가
 
     // 결과 영역 초기화
     document.getElementById('result').innerHTML = '';
@@ -187,14 +191,16 @@ function getGradeBands() {
     return getGradeBandsFromEditor();
 }
 
-// 기존 getGrade 함수를 커스텀 구간 사용하도록 수정
+// 기존 getGrade 함수를 범위 제한을 고려하도록 수정
 function getGrade(score) {
     // 점수를 백분율로 변환 (percentile은 0.0~1.0 범위의 값)
     const mean = parseFloat(document.getElementById("mean").value);
     const stddev = parseFloat(document.getElementById("stddev").value);
+    const minScore = parseFloat(document.getElementById("min-score").value); // 추가
+    const maxScore = parseFloat(document.getElementById("max-score").value); // 추가
 
-    // 백분율 계산 (상위 %)
-    const percentile = normalCDF(score, mean, stddev) * 100;
+    // 범위 제한 적용한 백분율 계산 (상위 %)
+    const percentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) * 100;
 
     // 백분율을 기준으로 학점 구간 판단
     const bands = getGradeBands();
@@ -213,6 +219,55 @@ function getGrade(score) {
     return "N/A";
 }
 
+// 설정 저장 함수 업데이트
+function saveSettings() {
+    try {
+        const currentGradeBands = getGradeBandsFromEditor();
+        const settings = {
+            mean: document.getElementById("mean").value,
+            stddev: document.getElementById("stddev").value,
+            population: document.getElementById("population").value,
+            score: document.getElementById("score").value,
+            minScore: document.getElementById("min-score").value, // 추가
+            maxScore: document.getElementById("max-score").value, // 추가
+            gradeBands: currentGradeBands
+        };
+        localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));
+    } catch (e) {
+        console.error("localStorage 저장 중 오류 발생:", e);
+        alert("설정을 저장하는 중 오류가 발생했습니다. 브라우저 저장 공간이 부족하거나 설정을 확인해주세요.");
+    }
+}
+
+// 설정 불러오기 함수 업데이트
+function loadSettings() {
+    try {
+        const savedSettings = localStorage.getItem(LS_SETTINGS_KEY);
+        if (savedSettings) {
+            const settings = JSON.parse(savedSettings);
+            // 저장된 입력값 복원
+            document.getElementById("mean").value = settings.mean || '';
+            document.getElementById("stddev").value = settings.stddev || '';
+            document.getElementById("population").value = settings.population || '';
+            document.getElementById("score").value = settings.score || '';
+            document.getElementById("min-score").value = settings.minScore || ''; // 추가
+            document.getElementById("max-score").value = settings.maxScore || ''; // 추가
+            // 저장된 학점 구간이 있으면 사용, 없으면 기본값 사용
+            renderGradeBandEditor(settings.gradeBands && settings.gradeBands.length > 0 ? settings.gradeBands : defaultGradeBands);
+        } else {
+            // 저장된 설정 없으면 기본 학점 구간으로 에디터 렌더링
+            renderGradeBandEditor(defaultGradeBands);
+        }
+
+        // 테마 설정 불러오기
+        loadThemeSettings();
+    } catch (e) {
+        console.error("localStorage 접근 중 오류 발생:", e);
+        alert("설정을 불러오는 중 오류가 발생했습니다. 브라우저 설정을 확인해주세요.");
+        renderGradeBandEditor(defaultGradeBands);
+    }
+}
+
 // 페이지 로드 시 설정 불러오기
 document.addEventListener('DOMContentLoaded', loadSettings);
 
@@ -226,25 +281,50 @@ document.getElementById("chart-type-toggle").addEventListener("change", function
     }
 });
 
-
 function calculateAndDraw() {
     const meanInput = document.getElementById("mean");
     const stddevInput = document.getElementById("stddev");
     const populationInput = document.getElementById("population");
     const scoreInput = document.getElementById("score");
+    const minScoreInput = document.getElementById("min-score"); // 추가: 최소 점수 입력 가져오기
+    const maxScoreInput = document.getElementById("max-score"); // 추가: 최대 점수 입력 가져오기
 
     const mean = parseFloat(meanInput.value);
     const stddev = parseFloat(stddevInput.value);
     const population = parseInt(populationInput.value);
     const score = parseFloat(scoreInput.value);
+    const minScore = parseFloat(minScoreInput.value); // 추가: 최소 점수 파싱
+    const maxScore = parseFloat(maxScoreInput.value); // 추가: 최대 점수 파싱
 
     let isValid = true;
     [meanInput, stddevInput, populationInput, scoreInput].forEach(input => input.classList.remove('border-red-500'));
+
+    // 최소/최대 점수 입력 필드도 초기화
+    minScoreInput.classList.remove('border-red-500');
+    maxScoreInput.classList.remove('border-red-500');
 
     if (isNaN(mean)) { meanInput.classList.add('border-red-500'); isValid = false; }
     if (isNaN(stddev) || stddev <= 0) { stddevInput.classList.add('border-red-500'); isValid = false; }
     if (isNaN(population) || population <= 0) { populationInput.classList.add('border-red-500'); isValid = false; }
     if (isNaN(score)) { scoreInput.classList.add('border-red-500'); isValid = false; }
+
+    // 최소/최대 점수 유효성 검사 추가
+    if (!isNaN(minScore) && !isNaN(maxScore) && minScore >= maxScore) {
+        minScoreInput.classList.add('border-red-500');
+        maxScoreInput.classList.add('border-red-500');
+        isValid = false;
+    }
+
+    // 점수가 범위를 벗어나는 경우 체크
+    if (!isNaN(minScore) && !isNaN(score) && score < minScore) {
+        scoreInput.classList.add('border-red-500');
+        isValid = false;
+    }
+
+    if (!isNaN(maxScore) && !isNaN(score) && score > maxScore) {
+        scoreInput.classList.add('border-red-500');
+        isValid = false;
+    }
 
     const currentBands = getGradeBands();
     if (!currentBands || currentBands.length === 0) {
@@ -262,9 +342,23 @@ function calculateAndDraw() {
 
     saveSettings();
 
-    const percentile = 1 - normalCDF(score, mean, stddev);
+    // 백분율 계산 시 점수 범위 고려
+    const percentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore);
     const percentileDisplay = Math.floor(percentile * 100000) / 1000;
-    const rank = Math.max(1, Math.ceil(percentile * population));
+
+    // 등수 계산 시 점수 범위를 고려한 조정
+    let rank = Math.max(1, Math.ceil(percentile * population));
+
+    // 만약 점수가 최대 점수를 초과하는 경우 1등으로 조정
+    if (!isNaN(maxScore) && score >= maxScore) {
+        rank = 1;
+    }
+
+    // 만약 점수가 최소 점수 미만인 경우 꼴등으로 조정
+    if (!isNaN(minScore) && score <= minScore) {
+        rank = population;
+    }
+
     const grade = getGrade(score);
 
     document.getElementById("result").innerHTML = `
@@ -273,6 +367,6 @@ function calculateAndDraw() {
     🏅 예상 학점: <strong class=\"text-blue-600\">${grade !== "N/A" ? grade : "구간 없음"}</strong>
   `;
 
-    drawChart(mean, stddev, score);
-    renderGradeTable(mean, stddev, population);
+    drawChart(mean, stddev, score, minScore, maxScore);
+    renderGradeTable(mean, stddev, population, minScore, maxScore);
 }
