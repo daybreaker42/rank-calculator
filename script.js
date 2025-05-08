@@ -200,7 +200,32 @@ function getGrade(score) {
     const maxScore = parseFloat(document.getElementById("max-score").value); // 추가
 
     // 범위 제한 적용한 백분율 계산 (상위 %)
-    const percentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) * 100;
+    let percentile;
+    
+    if (!isNaN(minScore) && !isNaN(maxScore)) {
+        // 범위 제한이 설정된 경우
+        if (score >= maxScore) {
+            // 최대 점수 이상인 경우는 상위 100%
+            percentile = 100;
+        } else if (score <= minScore) {
+            // 최소 점수 이하인 경우는 상위 0%
+            percentile = 0;
+        } else {
+            // 정규분포에서의 백분율 계산
+            const minPercentile = normalCDF(minScore, mean, stddev);
+            const maxPercentile = normalCDF(maxScore, mean, stddev);
+            const scorePercentile = normalCDF(score, mean, stddev);
+            
+            // 범위 내에서 정규화된 백분율 (0~1 사이 값)
+            const rangeNormalizedPercentile = (scorePercentile - minPercentile) / (maxPercentile - minPercentile);
+            
+            // 상위 백분율로 변환 (0~100 사이 값)
+            percentile = (1 - rangeNormalizedPercentile) * 100;
+        }
+    } else {
+        // 범위 제한이 없는 경우 기존 방식 사용
+        percentile = (1 - calculatePercentileWithRange(score, mean, stddev, minScore, maxScore)) * 100;
+    }
 
     // 백분율을 기준으로 학점 구간 판단
     const bands = getGradeBands();
@@ -342,21 +367,62 @@ function calculateAndDraw() {
 
     saveSettings();
 
-    // 백분율 계산 시 점수 범위 고려
-    const percentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore);
+    // 백분율 계산 시 점수 범위 고려 - getGrade와 동일한 방식으로 계산
+    let percentile;
+    
+    if (!isNaN(minScore) && !isNaN(maxScore)) {
+        // 범위 제한이 설정된 경우
+        if (score >= maxScore) {
+            // 최대 점수 이상인 경우는 상위 100%
+            percentile = 1.0;
+        } else if (score <= minScore) {
+            // 최소 점수 이하인 경우는 상위 0%
+            percentile = 0.0;
+        } else {
+            // 정규분포에서의 백분율 계산
+            const minPercentile = normalCDF(minScore, mean, stddev);
+            const maxPercentile = normalCDF(maxScore, mean, stddev);
+            const scorePercentile = normalCDF(score, mean, stddev);
+            
+            // 범위 내에서 정규화된 백분율 (0~1 사이 값)
+            const rangeNormalizedPercentile = (scorePercentile - minPercentile) / (maxPercentile - minPercentile);
+            
+            // 상위 백분율로 변환 (0~1 사이 값)
+            percentile = 1 - rangeNormalizedPercentile;
+        }
+    } else {
+        // 범위 제한이 없는 경우 기존 방식 사용
+        percentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore);
+    }
+
     const percentileDisplay = Math.floor(percentile * 100000) / 1000;
 
     // 등수 계산 시 점수 범위를 고려한 조정
-    let rank = Math.max(1, Math.ceil(percentile * population));
-
-    // 만약 점수가 최대 점수를 초과하는 경우 1등으로 조정
-    if (!isNaN(maxScore) && score >= maxScore) {
-        rank = 1;
-    }
-
-    // 만약 점수가 최소 점수 미만인 경우 꼴등으로 조정
-    if (!isNaN(minScore) && score <= minScore) {
-        rank = population;
+    let rank;
+    
+    if (!isNaN(minScore) && !isNaN(maxScore)) {
+        // 범위 제한이 설정된 경우 특수 처리
+        if (score >= maxScore) {
+            // 최대 점수 이상인 경우 1등
+            rank = 1;
+        } else if (score <= minScore) {
+            // 최소 점수 이하인 경우 꼴등
+            rank = population;
+        } else {
+            // 최소/최대 점수 사이인 경우: 전체 분포에서 해당 범위에 속하는 사람들만 고려
+            const minPercentile = normalCDF(minScore, mean, stddev);
+            const maxPercentile = normalCDF(maxScore, mean, stddev);
+            const scorePercentile = normalCDF(score, mean, stddev);
+            
+            // 범위 내 백분율 계산 (0~1 사이 값)
+            const rangeNormalizedPercentile = (scorePercentile - minPercentile) / (maxPercentile - minPercentile);
+            
+            // 재조정된 백분율로 등수 계산
+            rank = Math.max(1, Math.ceil((1 - rangeNormalizedPercentile) * population));
+        }
+    } else {
+        // 범위 제한이 없는 경우 기존 방식 사용
+        rank = Math.max(1, Math.ceil(percentile * population));
     }
 
     const grade = getGrade(score);

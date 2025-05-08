@@ -186,8 +186,33 @@ function drawChart(mean, stddev, score, minScore, maxScore) {
         afterDatasetsDraw(chart) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chart;
 
-            // 범위 제한을 고려한 백분율 계산
-            const adjustedPercentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) * 100;
+            // 범위 제한을 고려한 백분율 계산 - 개선된 방식 적용
+            let adjustedPercentile;
+            
+            if (!isNaN(minScore) && !isNaN(maxScore)) {
+                // 범위 제한이 설정된 경우
+                if (score >= maxScore) {
+                    // 최대 점수 이상인 경우는 상위 100%
+                    adjustedPercentile = 100;
+                } else if (score <= minScore) {
+                    // 최소 점수 이하인 경우는 상위 0%
+                    adjustedPercentile = 0;
+                } else {
+                    // 정규분포에서의 백분율 계산
+                    const minPercentile = normalCDF(minScore, mean, stddev);
+                    const maxPercentile = normalCDF(maxScore, mean, stddev);
+                    const scorePercentile = normalCDF(score, mean, stddev);
+                    
+                    // 범위 내에서 정규화된 백분율 (0~1 사이 값)
+                    const rangeNormalizedPercentile = (scorePercentile - minPercentile) / (maxPercentile - minPercentile);
+                    
+                    // 상위 백분율로 변환 (0~100 사이 값)
+                    adjustedPercentile = (1 - rangeNormalizedPercentile) * 100;
+                }
+            } else {
+                // 범위 제한이 없는 경우 기존 방식 사용
+                adjustedPercentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) * 100;
+            }
 
             // x축 위치 계산
             const xPos = x.getPixelForValue(showPercentile ?
@@ -215,9 +240,8 @@ function drawChart(mean, stddev, score, minScore, maxScore) {
             ctx.font = '12px Arial';
 
             // 점수와 백분율 모두 표시
-            const percentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) * 100;
             const scoreText = `${score}점`;
-            const percentileText = `상위 ${percentile.toFixed(1)}%`;
+            const percentileText = `상위 ${adjustedPercentile.toFixed(1)}%`;
 
             // 두 줄로 텍스트 표시
             ctx.fillText(scoreText, xPos, top - 20);

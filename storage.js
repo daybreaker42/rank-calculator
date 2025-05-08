@@ -42,6 +42,8 @@ function saveSettings() {
             stddev: document.getElementById("stddev").value,
             population: document.getElementById("population").value,
             score: document.getElementById("score").value,
+            minScore: document.getElementById("min-score").value, // 최소 점수 저장 추가
+            maxScore: document.getElementById("max-score").value, // 최대 점수 저장 추가
             gradeBands: currentGradeBands
         };
         localStorage.setItem(LS_SETTINGS_KEY, JSON.stringify(settings));

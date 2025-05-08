@@ -75,7 +75,8 @@
         <!-- 점수 제한에 대한 설명 추가 -->
         <div class="mb-4 w-full max-w-xs sm:max-w-md md:max-w-xl text-sm text-gray-700 dark:text-gray-300">
             <p>* 최소/최대 점수를 입력하면 해당 범위 내에서 정규분포를 조정하여 등수와 학점을 계산합니다.</p>
-    </div>
+            <p>* 점수 범위가 설정되면 해당 범위 내에서 상대적인 백분위를 계산합니다. 예: 최소 20점, 최대 100점인 시험에서 60점을 받으면 해당 범위 내에서의 상대적 위치를 계산합니다.</p>
+        </div>
 
     <div class="flex gap-4 w-full max-w-xs sm:max-w-md justify-center">
         <button onclick="calculateAndDraw()"
