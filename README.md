@@ -71,3 +71,4 @@ MIT License
 - 다중 과목 입력 및 비교 기능
 - 접근성(Accessibility) 향상: aria-label, 키보드 네비게이션 등
 - 커스텀 테마 색상 설정
+- gaussian mixture model 사용해 더 현실적으로 구현 (상위권 분포 추가)
