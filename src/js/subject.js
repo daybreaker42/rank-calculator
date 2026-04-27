@@ -55,30 +55,39 @@ const loadSubjectMetadata = async () => {
 };
 
 const checkUserVote = async () => {
+    // Clear previous state for a smooth transition
+    resetStatsUI();
+    
     if (!currentUser) {
         lockedOverlay.classList.remove('hidden');
         return;
     }
     
-    const voteId = `${currentUser.uid}_${subjectId}_${currentTab}`;
-    const voteRef = doc(db, 'votes', voteId);
-    const voteSnap = await getDoc(voteRef);
+    try {
+        const voteId = `${currentUser.uid}_${subjectId}_${currentTab}`;
+        const voteRef = doc(db, 'votes', voteId);
+        const voteSnap = await getDoc(voteRef);
 
-    if (voteSnap.exists()) {
-        userVote = voteSnap.data();
-        lockedOverlay.classList.add('hidden');
-        document.getElementById('input-score').value = userVote.score;
-        document.getElementById('input-min').value = userVote.minScore;
-        document.getElementById('input-max').value = userVote.maxScore;
-        btnEditScore.classList.remove('hidden');
-        
-        // After verifying vote, load the protected stats
-        await loadStatsData();
-    } else {
+        if (voteSnap.exists()) {
+            userVote = voteSnap.data();
+            lockedOverlay.classList.add('hidden');
+            document.getElementById('input-score').value = userVote.score;
+            document.getElementById('input-min').value = userVote.minScore || '';
+            document.getElementById('input-max').value = userVote.maxScore || '';
+            btnEditScore.classList.remove('hidden');
+            
+            // After verifying vote, load the protected stats
+            await loadStatsData();
+        } else {
+            userVote = null;
+            lockedOverlay.classList.remove('hidden');
+            btnEditScore.classList.add('hidden');
+        }
+    } catch (err) {
+        console.error("Error checking user vote:", err);
         userVote = null;
         lockedOverlay.classList.remove('hidden');
         btnEditScore.classList.add('hidden');
-        resetStatsUI();
     }
     
     // Always load comments (they have their own rules)
