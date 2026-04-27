@@ -4,8 +4,8 @@
       "collectionGroup": "comments",
       "queryScope": "COLLECTION",
       "fields": [
-        { "fieldPath": "subjectId", "order": "ASCENDING" },
         { "fieldPath": "boardId", "order": "ASCENDING" },
+        { "fieldPath": "subjectId", "order": "ASCENDING" },
         { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
     },
