@@ -15,12 +15,11 @@
     </script>
     <link rel="stylesheet" href="./src/css/style.css">
 </head>
-<body
-    class="bg-gray-50 dark:bg-gray-900 dark:text-white min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 md:p-6 transition-colors duration-200">
+<body class="bg-[#f5f5f7] dark:bg-black dark:text-[#f5f5f7] text-[#1d1d1f] min-h-screen flex flex-col items-center justify-start p-4 sm:p-8 transition-colors duration-200 font-sans">
     <!-- 다크모드 토글 버튼 추가 -->
-    <div class="absolute top-4 right-4">
+    <div class="absolute top-6 right-6">
         <button id="theme-toggle"
-            class="p-2 rounded-lg bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-400">
+            class="p-2 rounded-full bg-white dark:bg-[#1d1d1f] border border-[#d2d2d7] dark:border-[#424245] shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-[#0071e3] transition-all">
             <svg id="theme-toggle-light-icon" class="w-5 h-5 hidden" fill="currentColor" viewBox="0 0 20 20"
                 xmlns="http://www.w3.org/2000/svg">
                 <path
@@ -34,114 +33,145 @@
         </button>
     </div>
 
-    <h1 class="text-2xl sm:text-3xl font-bold text-blue-700 dark:text-blue-300 mb-4">성적 예상 등수 계산기</h1>
-
-    <!-- 정규분포 계산에 관한 주의사항 추가 -->
-    <div
-        class="bg-yellow-50 dark:bg-yellow-900 border-l-4 border-yellow-400 p-3 mb-4 w-full max-w-xs sm:max-w-md md:max-w-xl">
-        <p class="text-sm text-yellow-700 dark:text-yellow-200">
-            <span class="font-medium">참고:</span> 정규분포식은 실제 데이터와 일치하지 않을 수 있으며, 데이터가 정규분포일 때를 기준으로 계산합니다.
-        </p>
-    </div>
-
-    <!-- grid-cols-1로 모바일에서 한 줄, md:grid-cols-2로 데스크톱/태블릿에서 두 줄로 배치 -->
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 w-full max-w-xs sm:max-w-md md:max-w-xl">
-        <label for="mean" class="flex items-center space-x-2">
-            <span class="w-16">평균(μ)</span>
-            <input id="mean" type="number" placeholder="예: 70" class="input" />
-        </label>
-        <label for="stddev" class="flex items-center space-x-2">
-            <span class="w-16">표준편차(σ)</span>
-            <input id="stddev" type="number" placeholder="예: 10" class="input" />
-        </label>
-        <label for="population" class="flex items-center space-x-2">
-            <span class="w-16">전체 인원수(N)</span>
-            <input id="population" type="number" placeholder="예: 100" class="input" />
-        </label>
-        <label for="score" class="flex items-center space-x-2">
-            <span class="w-16">내 점수(X)</span>
-            <input id="score" type="number" placeholder="예: 85" class="input" />
-        </label>
-        <!-- 최소/최대 점수 입력 필드 추가 -->
-        <label for="min-score" class="flex items-center space-x-2">
-            <span class="w-16">최소 점수</span>
-            <input id="min-score" type="tel" placeholder="예: 0" class="input" />
-        </label>
-        <label for="max-score" class="flex items-center space-x-2">
-            <span class="w-16">최대 점수</span>
-            <input id="max-score" type="tel" placeholder="예: 100" class="input" />
-        </label>
-        </div>
-        
-        <!-- 점수 제한에 대한 설명 추가 -->
-        <div class="mb-4 w-full max-w-xs sm:max-w-md md:max-w-xl text-sm text-gray-700 dark:text-gray-300">
-            <p>* 최소/최대 점수를 입력하면 해당 범위 내에서 정규분포를 조정하여 등수와 학점을 계산합니다.</p>
-            <p>* 점수 범위가 설정되면 해당 범위 내에서 상대적인 백분위를 계산합니다. 예: 최소 20점, 최대 100점인 시험에서 60점을 받으면 해당 범위 내에서의 상대적 위치를 계산합니다.</p>
+    <div class="max-w-3xl w-full mx-auto space-y-8 mt-4 sm:mt-12">
+        <div class="text-center">
+            <h1 class="text-3xl sm:text-5xl font-semibold tracking-tight text-[#1d1d1f] dark:text-white mb-2">성적 예상 등수 계산기</h1>
+            <p class="text-lg text-[#6e6e73] dark:text-gray-400">당신의 성적 위치를 정확하게 확인하세요.</p>
         </div>
 
-    <div class="flex gap-4 w-full max-w-xs sm:max-w-md justify-center">
-        <button id="btn-calculate"
-            class="bg-blue-600 dark:bg-blue-700 text-white px-4 py-2 rounded-lg hover:bg-blue-700 dark:hover:bg-blue-800 w-full sm:w-auto">
-            계산하기
-        </button>
-        <button id="btn-clear" 
-            class="bg-yellow-500 dark:bg-yellow-600 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 dark:hover:bg-yellow-700 w-full sm:w-auto">
-            값 비우기
-        </button>
-    </div>
+        <!-- 정규분포 계산에 관한 주의사항 추가 -->
+        <div class="bg-white dark:bg-[#1d1d1f] rounded-2xl p-4 sm:p-6 border border-[#d2d2d7] dark:border-[#424245] shadow-sm flex items-start gap-4">
+            <div class="text-[#0071e3] mt-1">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+            <p class="text-[15px] leading-relaxed text-[#1d1d1f] dark:text-gray-300">
+                <span class="font-medium">참고:</span> 정규분포식은 실제 데이터와 일치하지 않을 수 있으며, 데이터가 정규분포일 때를 기준으로 계산합니다.
+            </p>
+        </div>
 
-    <!-- 결과 영역도 반응형 max-width 적용 -->
-    <div class="mt-6 w-full max-w-[1000px]">
-        <div class="flex items-center justify-end mb-2 gap-2">
-            <span class="text-sm text-gray-700 dark:text-gray-300">X축:</span>
-            <label class="inline-flex items-center cursor-pointer">
-                <span class="mr-2 text-sm text-gray-700 dark:text-gray-300">점수</span>
-                <div class="relative">
-                    <input type="checkbox" id="chart-type-toggle" class="sr-only peer">
-                    <div
-                        class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600">
-                    </div>
+        <!-- 메인 입력 폼 카드 -->
+        <div class="bg-white dark:bg-[#1d1d1f] rounded-3xl p-6 sm:p-8 border border-[#d2d2d7] dark:border-[#424245] shadow-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                <div class="flex flex-col space-y-2">
+                    <label for="mean" class="text-[15px] font-medium flex justify-between">
+                        <span>평균(μ) <span class="text-xs text-[#0071e3] font-normal ml-1">(필수)</span></span>
+                    </label>
+                    <input id="mean" type="number" placeholder="예: 70" class="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-black border border-transparent focus:border-[#0071e3] focus:bg-white dark:focus:bg-[#1d1d1f] focus:ring-4 focus:ring-[#0071e3]/20 transition-all outline-none" />
                 </div>
-                <span class="ml-2 text-sm text-gray-700 dark:text-gray-300">상위 백분율</span>
-            </label>
-        </div>
-        <div class="relative h-[200px]">
-            <canvas id="chartCanvas"></canvas>
-        </div>
-    </div>
-        
-    <!-- 결과 표시 영역을 버튼 바로 아래로 이동 -->
-    <div id="result"
-        class="mt-4 text-lg font-medium text-gray-800 dark:text-gray-200 text-center w-full max-w-xs sm:max-w-md md:max-w-xl">
-    </div>
+                <div class="flex flex-col space-y-2">
+                    <label for="stddev" class="text-[15px] font-medium flex justify-between">
+                        <span>표준편차(σ) <span class="text-xs text-[#0071e3] font-normal ml-1">(필수)</span></span>
+                    </label>
+                    <input id="stddev" type="number" placeholder="예: 10" class="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-black border border-transparent focus:border-[#0071e3] focus:bg-white dark:focus:bg-[#1d1d1f] focus:ring-4 focus:ring-[#0071e3]/20 transition-all outline-none" />
+                </div>
+                <div class="flex flex-col space-y-2">
+                    <label for="population" class="text-[15px] font-medium flex justify-between">
+                        <span>전체 인원수(N) <span class="text-xs text-[#0071e3] font-normal ml-1">(필수)</span></span>
+                    </label>
+                    <input id="population" type="number" placeholder="예: 100" class="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-black border border-transparent focus:border-[#0071e3] focus:bg-white dark:focus:bg-[#1d1d1f] focus:ring-4 focus:ring-[#0071e3]/20 transition-all outline-none" />
+                </div>
+                <div class="flex flex-col space-y-2">
+                    <label for="score" class="text-[15px] font-medium flex justify-between">
+                        <span>내 점수(X) <span class="text-xs text-[#0071e3] font-normal ml-1">(필수)</span></span>
+                    </label>
+                    <input id="score" type="number" placeholder="예: 85" class="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-black border border-transparent focus:border-[#0071e3] focus:bg-white dark:focus:bg-[#1d1d1f] focus:ring-4 focus:ring-[#0071e3]/20 transition-all outline-none" />
+                </div>
+                <div class="flex flex-col space-y-2">
+                    <label for="min-score" class="text-[15px] font-medium flex justify-between">
+                        <span>최소 점수 <span class="text-xs text-[#6e6e73] font-normal ml-1">(선택)</span></span>
+                    </label>
+                    <input id="min-score" type="number" placeholder="예: 0" class="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-black border border-transparent focus:border-[#0071e3] focus:bg-white dark:focus:bg-[#1d1d1f] focus:ring-4 focus:ring-[#0071e3]/20 transition-all outline-none" />
+                </div>
+                <div class="flex flex-col space-y-2">
+                    <label for="max-score" class="text-[15px] font-medium flex justify-between">
+                        <span>최대 점수 <span class="text-xs text-[#6e6e73] font-normal ml-1">(선택)</span></span>
+                    </label>
+                    <input id="max-score" type="number" placeholder="예: 100" class="w-full px-4 py-3 rounded-xl bg-[#f5f5f7] dark:bg-black border border-transparent focus:border-[#0071e3] focus:bg-white dark:focus:bg-[#1d1d1f] focus:ring-4 focus:ring-[#0071e3]/20 transition-all outline-none" />
+                </div>
+            </div>
+            
+            <div class="mb-8 text-[14px] text-[#6e6e73] dark:text-gray-400 bg-[#f5f5f7] dark:bg-black p-4 rounded-xl">
+                <ul class="list-disc pl-5 space-y-1">
+                    <li>최소/최대 점수를 입력하면 해당 범위 내에서 정규분포를 조정하여 등수와 학점을 계산합니다.</li>
+                    <li>점수 범위가 설정되면 해당 범위 내에서 상대적인 백분위를 새롭게 계산합니다.</li>
+                </ul>
+            </div>
 
-    <!-- 학점 구간별 경계값/상위% 표 영역 -->
-    <div id="grade-table" class="mt-4 w-full max-w-xs sm:max-w-md md:max-w-xl"></div>
-
-    <!-- 학점 구간 커스텀 UI 추가 -->
-    <div class="mt-8 w-full max-w-xs sm:max-w-md md:max-w-xl">
-        <h2 class="text-xl font-semibold mb-2">학점 구간 설정</h2>
-        <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">* 상위 백분율을 기준으로 학점 구간이 설정됩니다. 예: 90은 상위 90%를 의미</p>
-        <!-- 컬럼 헤더 추가 -->
-        <div class="grid grid-cols-4 gap-2 mb-2 px-2">
-            <div class="font-medium text-gray-700 dark:text-gray-300 text-center">학점명</div>
-            <div class="font-medium text-gray-700 dark:text-gray-300 text-center">상위 백분율</div>
-            <div class="font-medium text-gray-700 dark:text-gray-300 text-center">순서 변경</div>
-            <div class="font-medium text-gray-700 dark:text-gray-300 text-center">삭제</div>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center">
+                <button id="btn-calculate"
+                    class="bg-[#0071e3] text-white px-8 py-3.5 rounded-full font-medium hover:bg-[#0077ED] transition-colors focus:ring-4 focus:ring-[#0071e3]/30 w-full sm:w-auto">
+                    결과 계산하기
+                </button>
+                <button id="btn-clear" 
+                    class="bg-[#f5f5f7] dark:bg-[#2c2c2e] text-[#1d1d1f] dark:text-white px-8 py-3.5 rounded-full font-medium hover:bg-[#e8e8ed] dark:hover:bg-[#3a3a3c] transition-colors focus:ring-4 focus:ring-gray-200 dark:focus:ring-gray-700 border border-[#d2d2d7] dark:border-[#424245] w-full sm:w-auto">
+                    입력값 지우기
+                </button>
+            </div>
         </div>
-        <div id="grade-bands-editor" class="space-y-2">
-            <!-- JS에서 동적으로 학점 구간 입력 행 생성 -->
-        </div>
-        <button id="btn-add-band"
-            class="mt-2 text-sm bg-green-500 dark:bg-green-600 text-white px-2 py-1 rounded hover:bg-green-600 dark:hover:bg-green-700">구간 추가</button>
-    </div>
-    
 
-    <div class="mt-4 w-full max-w-xs sm:max-w-md text-center">
-        <button id="btn-reset"
-            class="bg-red-600 dark:bg-red-700 text-white px-4 py-2 rounded-lg hover:bg-red-700 dark:hover:bg-red-800">
-            설정 초기화
-        </button>
+        <!-- 결과 영역 카드 -->
+        <div class="bg-white dark:bg-[#1d1d1f] rounded-3xl p-6 sm:p-8 border border-[#d2d2d7] dark:border-[#424245] shadow-sm">
+            <!-- 결과 텍스트 영역 -->
+            <div id="result" class="mb-8 text-xl font-medium text-center leading-relaxed">
+                <!-- 결과가 여기에 표시됩니다 -->
+            </div>
+
+            <!-- 차트 영역 -->
+            <div class="mb-4">
+                <div class="flex items-center justify-end mb-4 gap-3">
+                    <span class="text-[14px] font-medium text-[#6e6e73] dark:text-gray-400">X축 기준:</span>
+                    <label class="inline-flex items-center cursor-pointer">
+                        <span class="mr-3 text-[14px] font-medium text-[#1d1d1f] dark:text-white">점수</span>
+                        <div class="relative">
+                            <input type="checkbox" id="chart-type-toggle" class="sr-only peer">
+                            <div
+                                class="w-11 h-6 bg-[#d2d2d7] peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#0071e3]/30 rounded-full peer dark:bg-[#424245] peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#0071e3]">
+                            </div>
+                        </div>
+                        <span class="ml-3 text-[14px] font-medium text-[#1d1d1f] dark:text-white">상위 백분율</span>
+                    </label>
+                </div>
+                <div class="relative h-[250px] w-full">
+                    <canvas id="chartCanvas"></canvas>
+                </div>
+            </div>
+
+            <!-- 학점 표 영역 -->
+            <div id="grade-table" class="mt-8"></div>
+        </div>
+
+        <!-- 학점 구간 커스텀 UI 추가 -->
+        <div class="bg-white dark:bg-[#1d1d1f] rounded-3xl p-6 sm:p-8 border border-[#d2d2d7] dark:border-[#424245] shadow-sm">
+            <h2 class="text-xl font-semibold tracking-tight mb-2">학점 구간 설정</h2>
+            <p class="text-[14px] text-[#6e6e73] dark:text-gray-400 mb-6">* 상위 백분율을 기준으로 학점 구간이 설정됩니다. 예: 90은 상위 90%를 의미</p>
+            
+            <div class="grid grid-cols-12 gap-2 mb-3 px-2 text-[13px] font-semibold text-[#6e6e73] dark:text-gray-400 uppercase tracking-wider">
+                <div class="col-span-3 text-center">학점명</div>
+                <div class="col-span-3 text-center">상위 백분율(%)</div>
+                <div class="col-span-3 text-center">순서 이동</div>
+                <div class="col-span-3 text-center">작업</div>
+            </div>
+            
+            <div id="grade-bands-editor" class="space-y-3 mb-6">
+                <!-- JS에서 동적으로 학점 구간 입력 행 생성 -->
+            </div>
+            
+            <div class="flex justify-between items-center mt-6 pt-6 border-t border-[#d2d2d7] dark:border-[#424245]">
+                <button id="btn-add-band"
+                    class="text-[#0071e3] hover:text-[#0077ED] font-medium text-[15px] flex items-center gap-1 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
+                    </svg>
+                    구간 추가
+                </button>
+                <button id="btn-reset"
+                    class="text-[#ff3b30] hover:text-[#ff453a] font-medium text-[14px] transition-colors">
+                    설정 초기화
+                </button>
+            </div>
+        </div>
     </div>
 
 

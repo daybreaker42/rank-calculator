@@ -81,25 +81,37 @@ export function computeScorePercentileRange(mean, stddev, bandMax, bandMin){
 }
 
 export function truncatedNormalPDF(x, mean, stddev, minScore, maxScore) {
-  if (x < minScore || x > maxScore) return 0;
+  const minS = isNaN(minScore) ? -Infinity : minScore;
+  const maxS = isNaN(maxScore) ? Infinity : maxScore;
+
+  if (x < minS || x > maxS) return 0;
   const pdf = normalPDF(x, mean, stddev);
-  const normalizingConstant = normalCDF(maxScore, mean, stddev) - normalCDF(minScore, mean, stddev);
+  
+  const minCDF = minS === -Infinity ? 0 : normalCDF(minS, mean, stddev);
+  const maxCDF = maxS === Infinity ? 1 : normalCDF(maxS, mean, stddev);
+  const normalizingConstant = maxCDF - minCDF;
+  
   return normalizingConstant > 0 ? pdf / normalizingConstant : 0;
 }
 
 export function truncatedNormalCDF(x, mean, stddev, minScore, maxScore) {
-  if (x <= minScore) return 0;
-  if (x >= maxScore) return 1;
+  const minS = isNaN(minScore) ? -Infinity : minScore;
+  const maxS = isNaN(maxScore) ? Infinity : maxScore;
+
+  if (x <= minS) return 0;
+  if (x >= maxS) return 1;
 
   const originalCDF = normalCDF(x, mean, stddev);
-  const minCDF = normalCDF(minScore, mean, stddev);
-  const maxCDF = normalCDF(maxScore, mean, stddev);
+  const minCDF = minS === -Infinity ? 0 : normalCDF(minS, mean, stddev);
+  const maxCDF = maxS === Infinity ? 1 : normalCDF(maxS, mean, stddev);
+
+  if (maxCDF === minCDF) return 0;
 
   return (originalCDF - minCDF) / (maxCDF - minCDF);
 }
 
 export function calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) {
-  if (isNaN(minScore) || isNaN(maxScore)) {
+  if (isNaN(minScore) && isNaN(maxScore)) {
     return 1 - normalCDF(score, mean, stddev);
   }
   const truncatedCDF = truncatedNormalCDF(score, mean, stddev, minScore, maxScore);
@@ -118,12 +130,15 @@ export function computeScorePercentileRangeWithLimits(mean, stddev, bandMax, ban
 
   let minScoreVal, maxScoreVal;
 
-  if (isNaN(minScore) || isNaN(maxScore)) {
+  const minS = isNaN(minScore) ? -Infinity : minScore;
+  const maxS = isNaN(maxScore) ? Infinity : maxScore;
+
+  if (isNaN(minScore) && isNaN(maxScore)) {
     maxScoreVal = normalInverseCDF(p1, mean, stddev);
     minScoreVal = normalInverseCDF(p2, mean, stddev);
   } else {
-    const minCDF = normalCDF(minScore, mean, stddev);
-    const maxCDF = normalCDF(maxScore, mean, stddev);
+    const minCDF = minS === -Infinity ? 0 : normalCDF(minS, mean, stddev);
+    const maxCDF = maxS === Infinity ? 1 : normalCDF(maxS, mean, stddev);
 
     const originalCDF_max = p1 * (maxCDF - minCDF) + minCDF;
     const originalCDF_min = p2 * (maxCDF - minCDF) + minCDF;
@@ -134,8 +149,8 @@ export function computeScorePercentileRangeWithLimits(mean, stddev, bandMax, ban
     maxScoreVal = normalInverseCDF(safe_originalCDF_max, mean, stddev);
     minScoreVal = normalInverseCDF(safe_originalCDF_min, mean, stddev);
     
-    maxScoreVal = Math.min(maxScore, Math.max(minScore, maxScoreVal));
-    minScoreVal = Math.min(maxScore, Math.max(minScore, minScoreVal));
+    maxScoreVal = Math.min(maxS, Math.max(minS, maxScoreVal));
+    minScoreVal = Math.min(maxS, Math.max(minS, minScoreVal));
   }
 
   return [roundedTopPercentile, roundedNextTopPercentile, parseFloat(minScoreVal.toFixed(2)), parseFloat(maxScoreVal.toFixed(2))];
