@@ -47,12 +47,16 @@ export function saveStoredTheme(isDarkMode) {
 export function applyTheme(isDarkMode) {
     if (isDarkMode) {
         document.documentElement.classList.add('dark');
-        document.getElementById('theme-toggle-dark-icon').classList.add('hidden');
-        document.getElementById('theme-toggle-light-icon').classList.remove('hidden');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+        if (darkIcon) darkIcon.classList.add('hidden');
+        if (lightIcon) lightIcon.classList.remove('hidden');
     } else {
         document.documentElement.classList.remove('dark');
-        document.getElementById('theme-toggle-light-icon').classList.add('hidden');
-        document.getElementById('theme-toggle-dark-icon').classList.remove('hidden');
+        const darkIcon = document.getElementById('theme-toggle-dark-icon');
+        const lightIcon = document.getElementById('theme-toggle-light-icon');
+        if (lightIcon) lightIcon.classList.add('hidden');
+        if (darkIcon) darkIcon.classList.remove('hidden');
     }
 }
 
