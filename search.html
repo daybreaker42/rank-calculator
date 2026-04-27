@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>검색 결과 - Rank Calc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <link rel="stylesheet" href="./src/css/style.css">
+</head>
+<body class="bg-[#f5f5f7] dark:bg-black dark:text-[#f5f5f7] text-[#1d1d1f] min-h-screen flex flex-col transition-colors duration-200 font-sans">
+    <script type="module" src="./src/js/navbar.js"></script>
+
+    <main class="flex-grow container mx-auto px-4 pt-24 pb-12 max-w-5xl">
+        <div class="mb-12">
+            <h1 class="text-3xl font-bold mb-6">검색 결과</h1>
+            <div class="relative group">
+                <input type="text" id="subject-search" 
+                    placeholder="다른 과목 검색..." 
+                    class="w-full px-6 py-4 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-[#d2d2d7] dark:border-[#424245] shadow-lg focus:ring-4 focus:ring-[#0071e3]/20 focus:border-[#0071e3] outline-none transition-all">
+                <div id="search-results" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1d1d1f] rounded-2xl border border-[#d2d2d7] dark:border-[#424245] shadow-2xl overflow-hidden hidden z-10"></div>
+            </div>
+        </div>
+
+        <div id="search-page-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Results injected here -->
+            <p class="col-span-full text-center text-[#6e6e73] my-12">검색어를 입력해주세요.</p>
+        </div>
+    </main>
+
+    <footer class="py-12 border-t border-[#d2d2d7] dark:border-[#424245] flex flex-col items-center">
+        <p class="text-[13px] text-[#6e6e73] dark:text-gray-400">© 2024 sjHan. All rights reserved.</p>
+    </footer>
+
+    <script type="module" src="./src/js/predictor.js"></script>
+    <script type="module">
+        import { db, collection, getDocs } from './src/js/firebase-config.js';
+        
+        const urlParams = new URLSearchParams(window.location.search);
+        const term = urlParams.get('q');
+        const resultsContainer = document.getElementById('search-page-results');
+        
+        if (term) {
+            document.getElementById('subject-search').value = term;
+            performSearch(term);
+        }
+
+        async function performSearch(term) {
+            resultsContainer.innerHTML = '<p class="col-span-full text-center text-[#6e6e73] my-12 animate-pulse">검색 중...</p>';
+            
+            try {
+                const snapshot = await getDocs(collection(db, 'subjects'));
+                const all = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const filtered = all.filter(s => 
+                    s.code.toLowerCase().includes(term.toLowerCase()) || 
+                    s.name.toLowerCase().includes(term.toLowerCase()) || 
+                    s.professor.toLowerCase().includes(term.toLowerCase())
+                );
+
+                resultsContainer.innerHTML = '';
+                if (filtered.length === 0) {
+                    resultsContainer.innerHTML = `
+                        <div class="col-span-full text-center py-12">
+                            <p class="text-[#6e6e73] mb-4">검색 결과가 없습니다.</p>
+                            <button onclick="document.getElementById('add-subject-modal').classList.remove('hidden')" class="text-[#0071e3] font-bold hover:underline">
+                                과목 직접 추가하기 +
+                            </button>
+                        </div>
+                    `;
+                    return;
+                }
+
+                filtered.forEach(subject => {
+                    const card = document.createElement('a');
+                    card.href = `subject.html?id=${subject.id}`;
+                    card.className = 'group p-6 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-[#d2d2d7] dark:border-[#424245] hover:shadow-xl transition-all flex flex-col justify-between h-40';
+                    card.innerHTML = `
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold text-[#0071e3] bg-[#0071e3]/10 px-2 py-1 rounded-md uppercase tracking-wider">${subject.code}</span>
+                                <span class="text-xs text-[#6e6e73] dark:text-gray-400">${subject.year} ${subject.semester}</span>
+                            </div>
+                            <h3 class="text-lg font-bold group-hover:text-[#0071e3] transition-colors line-clamp-1">${subject.name}</h3>
+                            <p class="text-sm text-[#6e6e73] dark:text-gray-400">${subject.professor} 교수님</p>
+                        </div>
+                    `;
+                    resultsContainer.appendChild(card);
+                });
+            } catch (err) {
+                console.error(err);
+                resultsContainer.innerHTML = '<p class="col-span-full text-center text-red-500 my-12">검색 중 오류가 발생했습니다.</p>';
+            }
+        }
+    </script>
+</body>
+</html>
