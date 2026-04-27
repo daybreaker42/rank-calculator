@@ -131,7 +131,7 @@ Firebase CLI가 설치되어 있어야 하며, 배포 전 `firebase login`을 �
 
 ## 링크 (Links)
 
-- **만족도 조사 및 개선 제안**: [Google Forms](https://forms.gle/D9Vcg5y2LZNDpLFRA)
+- **버그 제보 및 개선 피드백**: [Google Forms](https://forms.gle/D9Vcg5y2LZNDpLFRA)
 - **개발자 후원**: [Buy me a coffee](https://buymeacoffee.com/daybreaker42)
 
 ## 기여 (Contributing)
