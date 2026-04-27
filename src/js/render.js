@@ -139,17 +139,8 @@ export function renderGradeTable(bands, mean, stddev, population, minScore, maxS
                 maxScore
             );
 
-        let expectedCount;
-        if (!isNaN(minScore) || !isNaN(maxScore)) {
-            const minValueCDF = !isNaN(minScore) ? normalCDF(minScore, mean, stddev) : 0;
-            const maxValueCDF = !isNaN(maxScore) ? normalCDF(maxScore, mean, stddev) : 1;
-            const totalProbability = maxValueCDF - minValueCDF;
-
-            const bandProbability = (nextTopPercentile - topPercentile) / 100;
-            expectedCount = Math.round((bandProbability / totalProbability) * population);
-        } else {
-            expectedCount = Math.round((nextTopPercentile - topPercentile) * population / 100);
-        }
+        const bandProbability = (nextTopPercentile - topPercentile) / 100;
+        const expectedCount = Math.round(bandProbability * population);
 
         const rowClass = isDarkMode
             ? (index % 2 === 0 ? 'bg-gray-800' : 'bg-gray-900')

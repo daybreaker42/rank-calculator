@@ -107,15 +107,36 @@ export function calculatePercentileWithRange(score, mean, stddev, minScore, maxS
 }
 
 export function computeScorePercentileRangeWithLimits(mean, stddev, bandMax, bandMin, minScore, maxScore) {
-  const [topPercentile, nextTopPercentile, calculatedMaxScore, calculatedMinScore] =
-    computeScorePercentileRange(mean, stddev, bandMax, bandMin);
+  const topPercentile = 100 - bandMax;
+  const nextTopPercentile = 100 - bandMin;
+
+  const roundedTopPercentile = parseFloat(topPercentile.toFixed(2));
+  const roundedNextTopPercentile = parseFloat(nextTopPercentile.toFixed(2));
+
+  const p1 = Math.min(0.9999, bandMax / 100);
+  const p2 = Math.max(0.0001, bandMin / 100);
+
+  let minScoreVal, maxScoreVal;
 
   if (isNaN(minScore) || isNaN(maxScore)) {
-    return [topPercentile, nextTopPercentile, calculatedMinScore, calculatedMaxScore];
+    maxScoreVal = normalInverseCDF(p1, mean, stddev);
+    minScoreVal = normalInverseCDF(p2, mean, stddev);
+  } else {
+    const minCDF = normalCDF(minScore, mean, stddev);
+    const maxCDF = normalCDF(maxScore, mean, stddev);
+
+    const originalCDF_max = p1 * (maxCDF - minCDF) + minCDF;
+    const originalCDF_min = p2 * (maxCDF - minCDF) + minCDF;
+
+    const safe_originalCDF_max = Math.max(0.0001, Math.min(0.9999, originalCDF_max));
+    const safe_originalCDF_min = Math.max(0.0001, Math.min(0.9999, originalCDF_min));
+
+    maxScoreVal = normalInverseCDF(safe_originalCDF_max, mean, stddev);
+    minScoreVal = normalInverseCDF(safe_originalCDF_min, mean, stddev);
+    
+    maxScoreVal = Math.min(maxScore, Math.max(minScore, maxScoreVal));
+    minScoreVal = Math.min(maxScore, Math.max(minScore, minScoreVal));
   }
 
-  const limitedMinScore = Math.max(calculatedMinScore, minScore);
-  const limitedMaxScore = Math.min(calculatedMaxScore, maxScore);
-
-  return [topPercentile, nextTopPercentile, limitedMinScore, limitedMaxScore];
+  return [roundedTopPercentile, roundedNextTopPercentile, parseFloat(minScoreVal.toFixed(2)), parseFloat(maxScoreVal.toFixed(2))];
 }

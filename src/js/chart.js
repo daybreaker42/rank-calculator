@@ -132,24 +132,7 @@ export function drawChart(mean, stddev, score, minScore, maxScore, currentBands,
         afterDatasetsDraw(chartInstance) {
             const { ctx, chartArea: { top, bottom }, scales: { x } } = chartInstance;
 
-            let adjustedPercentile;
-            
-            if (!isNaN(minScore) && !isNaN(maxScore)) {
-                if (score >= maxScore) {
-                    adjustedPercentile = 100;
-                } else if (score <= minScore) {
-                    adjustedPercentile = 0;
-                } else {
-                    const minPercentile = normalCDF(minScore, mean, stddev);
-                    const maxPercentile = normalCDF(maxScore, mean, stddev);
-                    const scorePercentile = normalCDF(score, mean, stddev);
-                    
-                    const rangeNormalizedPercentile = (scorePercentile - minPercentile) / (maxPercentile - minPercentile);
-                    adjustedPercentile = (1 - rangeNormalizedPercentile) * 100;
-                }
-            } else {
-                adjustedPercentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) * 100;
-            }
+            let adjustedPercentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore) * 100;
 
             const xPos = x.getPixelForValue(showPercentile ? adjustedPercentile : score);
 

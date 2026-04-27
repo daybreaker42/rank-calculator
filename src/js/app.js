@@ -185,32 +185,16 @@ function addGradeBandRow() {
 }
 
 function getGrade(score, mean, stddev, minScore, maxScore) {
-    let percentile;
-    
-    if (!isNaN(minScore) && !isNaN(maxScore)) {
-        if (score >= maxScore) {
-            percentile = 100;
-        } else if (score <= minScore) {
-            percentile = 0;
-        } else {
-            const minPercentile = normalCDF(minScore, mean, stddev);
-            const maxPercentile = normalCDF(maxScore, mean, stddev);
-            const scorePercentile = normalCDF(score, mean, stddev);
-            
-            const rangeNormalizedPercentile = (scorePercentile - minPercentile) / (maxPercentile - minPercentile);
-            percentile = (1 - rangeNormalizedPercentile) * 100;
-        }
-    } else {
-        percentile = (1 - calculatePercentileWithRange(score, mean, stddev, minScore, maxScore)) * 100;
-    }
+    const topPercentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore);
+    const cdfPercent = (1 - topPercentile) * 100;
 
     for (const band of currentGradeBands) {
-        if (percentile >= band.min && percentile <= band.max) {
+        if (cdfPercent >= band.min && cdfPercent <= band.max) {
             return band.grade;
         }
     }
 
-    if (currentGradeBands.length > 0 && percentile < currentGradeBands[currentGradeBands.length - 1].min) {
+    if (currentGradeBands.length > 0 && cdfPercent < currentGradeBands[currentGradeBands.length - 1].min) {
         return currentGradeBands[currentGradeBands.length - 1].grade;
     }
 
@@ -272,41 +256,9 @@ function calculateAndDraw() {
     // Refresh current bands from editor to ensure we have the latest
     saveSettings();
 
-    let percentile;
-    if (!isNaN(minScore) && !isNaN(maxScore)) {
-        if (score >= maxScore) {
-            percentile = 1.0;
-        } else if (score <= minScore) {
-            percentile = 0.0;
-        } else {
-            const minPercentile = normalCDF(minScore, mean, stddev);
-            const maxPercentile = normalCDF(maxScore, mean, stddev);
-            const scorePercentile = normalCDF(score, mean, stddev);
-            const rangeNormalizedPercentile = (scorePercentile - minPercentile) / (maxPercentile - minPercentile);
-            percentile = 1 - rangeNormalizedPercentile;
-        }
-    } else {
-        percentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore);
-    }
-
+    const percentile = calculatePercentileWithRange(score, mean, stddev, minScore, maxScore);
     const percentileDisplay = Math.floor(percentile * 100000) / 1000;
-
-    let rank;
-    if (!isNaN(minScore) && !isNaN(maxScore)) {
-        if (score >= maxScore) {
-            rank = 1;
-        } else if (score <= minScore) {
-            rank = population;
-        } else {
-            const minPercentile = normalCDF(minScore, mean, stddev);
-            const maxPercentile = normalCDF(maxScore, mean, stddev);
-            const scorePercentile = normalCDF(score, mean, stddev);
-            const rangeNormalizedPercentile = (scorePercentile - minPercentile) / (maxPercentile - minPercentile);
-            rank = Math.max(1, Math.ceil((1 - rangeNormalizedPercentile) * population));
-        }
-    } else {
-        rank = Math.max(1, Math.ceil(percentile * population));
-    }
+    const rank = Math.max(1, Math.ceil(percentile * population));
 
     const grade = getGrade(score, mean, stddev, minScore, maxScore);
 
