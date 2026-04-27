@@ -134,17 +134,22 @@ addSubjectForm.onsubmit = async (e) => {
     const semester = document.getElementById('new-subject-semester').value;
 
     try {
-        const docRef = await addDoc(collection(db, 'subjects'), {
+        // 1. Create main subject doc
+        const subjectRef = await addDoc(collection(db, 'subjects'), {
             code, name, professor, year, semester,
             voteCount: 0,
             createdAt: serverTimestamp(),
-            stats: {
-                midterm: { count: 0, mean: 0, min: 0, max: 0, histogram: {} },
-                final: { count: 0, mean: 0, min: 0, max: 0, histogram: {} }
-            }
+            commentCounters: { midterm: 0, final: 0 }
         });
-        window.location.href = `subject.html?id=${docRef.id}`;
+
+        // 2. Initialize stats sub-collection
+        const initialStats = { count: 0, sum: 0, min: null, max: null, histogram: {} };
+        await setDoc(doc(db, 'subjects', subjectRef.id, 'stats', 'midterm'), initialStats);
+        await setDoc(doc(db, 'subjects', subjectRef.id, 'stats', 'final'), initialStats);
+
+        window.location.href = `subject.html?id=${subjectRef.id}`;
     } catch (err) {
+        console.error(err);
         alert('과목 추가에 실패했습니다.');
     }
 };

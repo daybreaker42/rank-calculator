@@ -9,6 +9,7 @@ if (!subjectId) {
 }
 
 let currentSubject = null;
+let currentStats = null;
 let currentUser = null;
 let currentTab = 'midterm'; // midterm or final
 let userVote = null;
@@ -30,20 +31,17 @@ observeAuthState(async (user) => {
     } else {
         commentInputArea.classList.add('hidden');
     }
-    await loadSubjectData();
+    await loadSubjectMetadata();
     await checkUserVote();
 });
 
-const loadSubjectData = async () => {
+const loadSubjectMetadata = async () => {
     const docRef = doc(db, 'subjects', subjectId);
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
         currentSubject = docSnap.data();
         updateHeader();
-        updateStats();
-        renderChart();
-        loadComments();
     } else {
         alert('과목을 찾을 수 없습니다.');
         window.location.href = 'predictor.html';
@@ -51,7 +49,10 @@ const loadSubjectData = async () => {
 };
 
 const checkUserVote = async () => {
-    if (!currentUser) return;
+    if (!currentUser) {
+        lockedOverlay.classList.remove('hidden');
+        return;
+    }
     
     const voteId = `${currentUser.uid}_${subjectId}_${currentTab}`;
     const voteRef = doc(db, 'votes', voteId);
@@ -63,8 +64,31 @@ const checkUserVote = async () => {
         document.getElementById('input-score').value = userVote.score;
         document.getElementById('input-min').value = userVote.minScore;
         document.getElementById('input-max').value = userVote.maxScore;
+        
+        // After verifying vote, load the protected stats
+        await loadStatsData();
     } else {
         userVote = null;
+        lockedOverlay.classList.remove('hidden');
+        resetStatsUI();
+    }
+    
+    // Always load comments (they have their own rules)
+    loadComments();
+};
+
+const loadStatsData = async () => {
+    try {
+        const statsRef = doc(db, 'subjects', subjectId, 'stats', currentTab);
+        const statsSnap = await getDoc(statsRef);
+        
+        if (statsSnap.exists()) {
+            currentStats = statsSnap.data();
+            updateStatsUI();
+            renderChart();
+        }
+    } catch (err) {
+        console.error("Stats access denied or error:", err);
         lockedOverlay.classList.remove('hidden');
     }
 };
@@ -76,26 +100,43 @@ const updateHeader = () => {
     document.getElementById('header-prof').innerText = `${currentSubject.professor} 교수님`;
 };
 
-const updateStats = () => {
-    const stats = currentSubject.stats[currentTab];
-    const mean = stats.count > 0 ? (stats.sum / stats.count).toFixed(2) : '--';
+const resetStatsUI = () => {
+    document.getElementById('stat-mean').innerText = '--';
+    document.getElementById('stat-rank').innerText = '--';
+    document.getElementById('stat-min').innerText = '--';
+    document.getElementById('stat-max').innerText = '--';
+    if (chart) chart.destroy();
+};
+
+const updateStatsUI = () => {
+    if (!currentStats) return;
     
+    const mean = currentStats.count > 0 ? (currentStats.sum / currentStats.count).toFixed(2) : '--';
     document.getElementById('stat-mean').innerText = mean;
-    document.getElementById('stat-min').innerText = stats.min ?? '--';
-    document.getElementById('stat-max').innerText = stats.max ?? '--';
+    document.getElementById('stat-min').innerText = currentStats.min ?? '--';
+    document.getElementById('stat-max').innerText = currentStats.max ?? '--';
     
-    if (userVote) {
-        // Simple rank estimation (Percentile)
-        // In a real app, you'd calculate this based on the distribution
-        document.getElementById('stat-rank').innerText = "분석중";
+    if (userVote && currentStats.count > 0) {
+        // Simple rank estimation based on histogram
+        let higherCount = 0;
+        const histogram = currentStats.histogram || {};
+        const myScore = userVote.score;
+        
+        Object.keys(histogram).forEach(bucket => {
+            if (parseInt(bucket) > myScore) {
+                higherCount += histogram[bucket];
+            }
+        });
+        
+        const rank = higherCount + 1;
+        document.getElementById('stat-rank').innerText = `${rank} / ${currentStats.count}`;
     }
 };
 
 const renderChart = () => {
-    const stats = currentSubject.stats[currentTab];
-    const histogram = stats.histogram || {};
+    if (!currentStats) return;
+    const histogram = currentStats.histogram || {};
     
-    // Generate labels (0, 5, 10, ..., 100)
     const labels = [];
     const data = [];
     for (let i = 0; i <= 100; i += 5) {
@@ -124,13 +165,18 @@ const renderChart = () => {
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: (ctx) => `약 ${ctx.raw}명`
+                    }
+                }
             },
             scales: {
                 y: {
                     beginAtZero: true,
                     grid: { color: isDark ? '#424245' : '#d2d2d7' },
-                    ticks: { color: '#86868b' }
+                    ticks: { color: '#86868b', stepSize: 1 }
                 },
                 x: {
                     grid: { display: false },
@@ -150,9 +196,6 @@ const switchTab = (tab) => {
     document.getElementById('tab-midterm').className = tab === 'midterm' ? 'tab-active px-6 py-3 font-semibold' : 'tab-inactive px-6 py-3 font-semibold';
     document.getElementById('tab-final').className = tab === 'final' ? 'tab-active px-6 py-3 font-semibold' : 'tab-inactive px-6 py-3 font-semibold';
     checkUserVote();
-    updateStats();
-    renderChart();
-    loadComments();
 };
 
 // Modal Logic
@@ -175,38 +218,45 @@ scoreForm.onsubmit = async (e) => {
     const voteId = `${currentUser.uid}_${subjectId}_${currentTab}`;
     const voteRef = doc(db, 'votes', voteId);
     
-    // Histogram bucket (round to nearest 5)
     const bucket = Math.floor(score / 5) * 5;
 
     try {
         const isUpdate = !!userVote;
         
-        // Update stats in subject doc
-        const subjectRef = doc(db, 'subjects', subjectId);
+        // Update stats in the sub-collection doc
+        const statsRef = doc(db, 'subjects', subjectId, 'stats', currentTab);
         
-        // We use increments for sum, count, and histogram
-        const updates = {
-            [`stats.${currentTab}.sum`]: increment(isUpdate ? score - userVote.score : score),
-            [`stats.${currentTab}.count`]: increment(isUpdate ? 0 : 1),
-            [`stats.${currentTab}.histogram.${bucket}`]: increment(1)
+        const statsUpdates = {
+            sum: increment(isUpdate ? score - userVote.score : score),
+            count: increment(isUpdate ? 0 : 1),
+            [`histogram.${bucket}`]: increment(1)
         };
         
-        // If it was an update, decrement old bucket
         if (isUpdate) {
             const oldBucket = Math.floor(userVote.score / 5) * 5;
             if (oldBucket !== bucket) {
-                updates[`stats.${currentTab}.histogram.${oldBucket}`] = increment(-1);
+                statsUpdates[`histogram.${oldBucket}`] = increment(-1);
             }
         }
 
-        // Global vote count for popularity
-        if (!isUpdate) {
-            updates['voteCount'] = increment(1);
-        }
+        // Handle min/max (Note: Simple override for now, ideally needs aggregation)
+        // Since we can't easily calculate true min/max with increment, 
+        // we update if current score is more extreme.
+        const statsSnap = await getDoc(statsRef);
+        const statsData = statsSnap.data();
+        if (!statsData.min || minScore < statsData.min) statsUpdates.min = minScore;
+        if (!statsData.max || maxScore > statsData.max) statsUpdates.max = maxScore;
 
-        await updateDoc(subjectRef, updates);
+        await updateDoc(statsRef, statsUpdates);
         
-        // Save vote
+        // Update main subject doc for popularity
+        if (!isUpdate) {
+            await updateDoc(doc(db, 'subjects', subjectId), {
+                voteCount: increment(1)
+            });
+        }
+        
+        // Save/Update vote
         await setDoc(voteRef, {
             userId: currentUser.uid,
             subjectId,
@@ -218,7 +268,6 @@ scoreForm.onsubmit = async (e) => {
         });
 
         scoreModal.classList.add('hidden');
-        await loadSubjectData();
         await checkUserVote();
     } catch (err) {
         console.error(err);
