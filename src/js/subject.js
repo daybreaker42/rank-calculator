@@ -26,6 +26,36 @@ const commentInputArea = document.getElementById('comment-input-area');
 const btnEditScore = document.getElementById('btn-edit-score');
 const modalTitle = document.getElementById('modal-title');
 
+// Relative Time Formatter
+const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return '방금 전';
+    const date = timestamp.toDate();
+    const now = new Date();
+    const diff = Math.floor((now - date) / 1000); // seconds
+
+    if (diff < 60) return '방금 전';
+    
+    const minutes = Math.floor(diff / 60);
+    if (minutes < 60) return `${minutes}분 전`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}시간 전`;
+    
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}일 전`;
+    
+    const weeks = Math.floor(days / 7);
+    if (weeks < 5) return `${weeks}주 전`;
+    
+    // 1달(약 30일) 이상인 경우 날짜 표시
+    const isDifferentYear = now.getFullYear() !== date.getFullYear();
+    if (isDifferentYear) {
+        return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+    } else {
+        return `${date.getMonth() + 1}월 ${date.getDate()}일`;
+    }
+};
+
 // Initialize
 observeAuthState(async (user) => {
     currentUser = user;
@@ -365,7 +395,7 @@ const renderComment = (id, data) => {
         <div class="flex items-center justify-between mb-1">
             <span class="text-xs font-bold text-[#0071e3]">익명 ${data.anonymousId}</span>
             <div class="flex items-center gap-2">
-                <span class="text-[10px] text-[#86868b]">${data.timestamp ? new Date(data.timestamp.toDate()).toLocaleString() : '방금 전'}</span>
+                <span class="text-[10px] text-[#86868b]">${formatRelativeTime(data.timestamp)}</span>
                 ${isOwner ? `<button class="text-[10px] text-red-500 hover:underline btn-delete-comment" data-id="${id}">삭제</button>` : ''}
             </div>
         </div>
