@@ -12,7 +12,7 @@ service cloud.firestore {
     match /subjects/{subjectId}/stats/{type} {
       allow read: if request.auth != null && 
         exists(/databases/$(database)/documents/votes/$(request.auth.uid + "_" + subjectId + "_" + type));
-      allow write: if request.auth != null; // 서버 측 로직이나 트랜잭션에서 처리
+      allow write: if false; // Cloud Functions에서 처리
     }
 
     // 3. 투표 및 댓글: 기존 규칙 유지

@@ -307,53 +307,13 @@ scoreForm.onsubmit = async (e) => {
             timestamp: serverTimestamp()
         });
 
-        // 2. Update stats in the sub-collection doc
-        const statsRef = doc(db, 'subjects', subjectId, 'stats', currentTab);
-        
-        const statsUpdates = {
-            sum: increment(isUpdate ? score - userVote.score : score),
-            count: increment(isUpdate ? 0 : 1),
-            [`histogram.${bucket}`]: increment(1)
-        };
-        
-        if (isUpdate) {
-            const oldBucket = Math.floor(userVote.score / 5) * 5;
-            if (oldBucket !== bucket) {
-                statsUpdates[`histogram.${oldBucket}`] = increment(-1);
-            }
-        }
-
-        // Handle min/max (Note: Simple override for now, ideally needs aggregation)
-        // Since we can't easily calculate true min/max with increment, 
-        // we update if current score is more extreme.
-        const statsSnap = await getDoc(statsRef);
-        
-        if (statsSnap.exists()) {
-            const statsData = statsSnap.data();
-            if (!statsData.min || minScore < statsData.min) statsUpdates.min = minScore;
-            if (!statsData.max || maxScore > statsData.max) statsUpdates.max = maxScore;
-            await updateDoc(statsRef, statsUpdates);
-        } else {
-            // Initialize if missing (e.g. due to previous subject creation bug)
-            const initialStats = {
-                count: 1,
-                sum: score,
-                min: minScore,
-                max: maxScore,
-                histogram: { [bucket]: 1 }
-            };
-            await setDoc(statsRef, initialStats);
-        }
-        
-        // 3. Update main subject doc for popularity
-        if (!isUpdate) {
-            await updateDoc(doc(db, 'subjects', subjectId), {
-                voteCount: increment(1)
-            });
-        }
-
+        // 2. Stats update is now handled by Cloud Functions securely.
         scoreModal.classList.add('hidden');
-        await checkUserVote();
+        
+        // Give the Cloud Function a moment to process the trigger before refreshing UI
+        setTimeout(async () => {
+            await checkUserVote();
+        }, 1200);
     } catch (err) {
         console.error(err);
         alert('저장에 실패했습니다.');
