@@ -23,6 +23,8 @@ const scoreForm = document.getElementById('score-form');
 const commentsList = document.getElementById('comments-list');
 const commentForm = document.getElementById('comment-form');
 const commentInputArea = document.getElementById('comment-input-area');
+const btnEditScore = document.getElementById('btn-edit-score');
+const modalTitle = document.getElementById('modal-title');
 
 // Initialize
 observeAuthState(async (user) => {
@@ -68,12 +70,14 @@ const checkUserVote = async () => {
         document.getElementById('input-score').value = userVote.score;
         document.getElementById('input-min').value = userVote.minScore;
         document.getElementById('input-max').value = userVote.maxScore;
+        btnEditScore.classList.remove('hidden');
         
         // After verifying vote, load the protected stats
         await loadStatsData();
     } else {
         userVote = null;
         lockedOverlay.classList.remove('hidden');
+        btnEditScore.classList.add('hidden');
         resetStatsUI();
     }
     
@@ -265,7 +269,16 @@ document.getElementById('btn-unlock').onclick = () => {
     }
     scoreModal.classList.remove('hidden');
 };
-document.getElementById('btn-close-score-modal').onclick = () => scoreModal.classList.add('hidden');
+
+btnEditScore.onclick = () => {
+    modalTitle.innerText = '점수 수정';
+    scoreModal.classList.remove('hidden');
+};
+
+document.getElementById('btn-close-score-modal').onclick = () => {
+    scoreModal.classList.add('hidden');
+    modalTitle.innerText = '점수 입력'; // Reset for next time
+};
 
 // Submit Score
 scoreForm.onsubmit = async (e) => {

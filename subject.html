@@ -82,9 +82,12 @@
                             <p class="text-xs text-[#6e6e73] mb-1">평균</p>
                             <p id="stat-mean" class="text-2xl font-bold">--</p>
                         </div>
-                        <div class="bg-white dark:bg-[#1d1d1f] p-6 rounded-2xl border border-[#d2d2d7] dark:border-[#424245]">
-                            <p class="text-xs text-[#6e6e73] mb-1">내 등수</p>
-                            <p id="stat-rank" class="text-2xl font-bold text-[#0071e3]">--</p>
+                        <div class="bg-white dark:bg-[#1d1d1f] p-6 rounded-2xl border border-[#d2d2d7] dark:border-[#424245] flex justify-between items-start">
+                            <div>
+                                <p class="text-xs text-[#6e6e73] mb-1">내 등수</p>
+                                <p id="stat-rank" class="text-2xl font-bold text-[#0071e3]">--</p>
+                            </div>
+                            <button id="btn-edit-score" class="text-[11px] text-[#0071e3] font-medium hover:underline hidden">수정</button>
                         </div>
                         <div id="stat-min-card" class="bg-white dark:bg-[#1d1d1f] p-6 rounded-2xl border border-[#d2d2d7] dark:border-[#424245]">
                             <p class="text-xs text-[#6e6e73] mb-1">최저점</p>
