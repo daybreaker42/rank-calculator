@@ -159,11 +159,6 @@ addSubjectForm.onsubmit = async (e) => {
             commentCounters: { midterm: 0, final: 0 }
         });
 
-        // 2. Initialize stats sub-collection
-        const initialStats = { count: 0, sum: 0, min: null, max: null, histogram: {} };
-        await setDoc(doc(db, 'subjects', subjectRef.id, 'stats', 'midterm'), initialStats);
-        await setDoc(doc(db, 'subjects', subjectRef.id, 'stats', 'final'), initialStats);
-
         window.location.href = `subject.html?id=${subjectRef.id}`;
     } catch (err) {
         console.error(err);
