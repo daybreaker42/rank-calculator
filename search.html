@@ -26,8 +26,30 @@
         </div>
     </main>
 
-    <footer class="py-12 border-t border-[#d2d2d7] dark:border-[#424245] flex flex-col items-center">
-        <p class="text-[13px] text-[#6e6e73] dark:text-gray-400">© <span class="current-year">2026</span> sjHan. All rights reserved.</p>
+    <footer class="mt-20 pb-12 w-full max-w-5xl mx-auto border-t border-[#d2d2d7] dark:border-[#424245] pt-8 flex flex-col items-center space-y-4">
+        <div class="flex flex-col sm:flex-row items-center gap-2 sm:gap-6 text-[13px] font-medium text-[#6e6e73] dark:text-gray-400">
+            <p>Made by <span class="text-[#1d1d1f] dark:text-white">sjHan</span></p>
+            <div class="hidden sm:block w-px h-3 bg-[#d2d2d7] dark:bg-[#424245]"></div>
+            <a href="mailto:han123400040@gmail.com" class="hover:text-[#0071e3] transition-colors">han123400040@gmail.com</a>
+        </div>
+        
+        <div class="flex flex-col sm:flex-row items-center gap-3">
+            <a href="https://forms.gle/D9Vcg5y2LZNDpLFRA" target="_blank" 
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#0071e3] text-white text-[13px] font-semibold hover:bg-[#0077ED] transition-all shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+                <span>만족도 조사 및 개선 제안</span>
+            </a>
+            
+            <a href="https://buymeacoffee.com/daybreaker42" target="_blank" 
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-[#1d1d1f] border border-[#d2d2d7] dark:border-[#424245] text-[13px] font-semibold text-[#1d1d1f] dark:text-white hover:bg-[#f5f5f7] dark:hover:bg-[#2c2c2e] transition-all shadow-sm">
+                <img src="https://cdn.buymeacoffee.com/buttons/bmc-new-btn-logo.svg" alt="BMC" class="h-4 w-4">
+                <span>Buy me a coffee</span>
+            </a>
+        </div>
+
+        <p class="text-[11px] text-[#86868b] dark:text-gray-500 mt-2">© <span class="current-year">2026</span> sjHan. All rights reserved.</p>
     </footer>
 
     <script type="module" src="./src/js/predictor.js"></script>
