@@ -45,6 +45,10 @@ exports.updateStats = onDocumentWritten("votes/{voteId}", async (event) => {
       if (stats.max === null || afterData.maxScore > stats.max) {
         stats.max = afterData.maxScore;
       }
+      // Update subject popularity
+      transaction.update(db.doc(`subjects/${subjectId}`), {
+        voteCount: admin.firestore.FieldValue.increment(1),
+      });
     } else if (beforeData && afterData) {
       // UPDATE
       const oldScore = beforeData.score;
@@ -67,6 +71,10 @@ exports.updateStats = onDocumentWritten("votes/{voteId}", async (event) => {
       stats.count = Math.max(0, stats.count - 1);
       stats.sum = Math.max(0, stats.sum - score);
       stats.histogram[bucket] = Math.max(0, (stats.histogram[bucket] || 1) - 1);
+      // Update subject popularity
+      transaction.update(db.doc(`subjects/${subjectId}`), {
+        voteCount: admin.firestore.FieldValue.increment(-1),
+      });
     }
 
     transaction.set(statsRef, stats, {merge: true});
