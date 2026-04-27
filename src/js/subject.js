@@ -1,4 +1,4 @@
-import { db, auth, doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, addDoc, serverTimestamp, increment, arrayUnion, arrayRemove, orderBy, limit, onSnapshot } from './firebase-config.js';
+import { db, auth, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, addDoc, serverTimestamp, increment, arrayUnion, arrayRemove, orderBy, limit, onSnapshot } from './firebase-config.js';
 import { observeAuthState } from './auth.js';
 
 const urlParams = new URLSearchParams(window.location.search);
@@ -13,6 +13,7 @@ let currentStats = null;
 let currentUser = null;
 let currentTab = 'midterm'; // midterm or final
 let userVote = null;
+let isFavorited = false;
 let chart = null;
 
 // UI Elements
@@ -33,6 +34,9 @@ observeAuthState(async (user) => {
     }
     await loadSubjectMetadata();
     await checkUserVote();
+    if (user) {
+        checkFavoriteStatus();
+    }
 });
 
 const loadSubjectMetadata = async () => {
@@ -75,6 +79,58 @@ const checkUserVote = async () => {
     
     // Always load comments (they have their own rules)
     loadComments();
+};
+
+const checkFavoriteStatus = async () => {
+    if (!currentUser) return;
+    const favId = `${currentUser.uid}_${subjectId}`;
+    const favRef = doc(db, 'favorites', favId);
+    const favSnap = await getDoc(favRef);
+    isFavorited = favSnap.exists();
+    updateFavoriteUI();
+};
+
+const updateFavoriteUI = () => {
+    const icon = document.getElementById('favorite-icon');
+    if (isFavorited) {
+        icon.setAttribute('fill', 'currentColor');
+        icon.classList.add('text-red-500');
+        icon.classList.remove('text-[#d2d2d7]');
+    } else {
+        icon.setAttribute('fill', 'none');
+        icon.classList.remove('text-red-500');
+        icon.classList.add('text-[#d2d2d7]');
+    }
+};
+
+document.getElementById('btn-favorite').onclick = async () => {
+    if (!currentUser) {
+        alert('로그인이 필요한 기능입니다.');
+        return;
+    }
+
+    const favId = `${currentUser.uid}_${subjectId}`;
+    const favRef = doc(db, 'favorites', favId);
+
+    try {
+        if (isFavorited) {
+            await deleteDoc(favRef);
+            isFavorited = false;
+        } else {
+            await setDoc(favRef, {
+                userId: currentUser.uid,
+                subjectId,
+                subjectName: currentSubject.name,
+                subjectCode: currentSubject.code,
+                timestamp: serverTimestamp()
+            });
+            isFavorited = true;
+        }
+        updateFavoriteUI();
+    } catch (err) {
+        console.error(err);
+        alert('즐겨찾기 설정에 실패했습니다.');
+    }
 };
 
 const loadStatsData = async () => {
@@ -345,11 +401,34 @@ const renderComment = (id, data) => {
     if (deleteBtn) {
         deleteBtn.onclick = async () => {
             if (confirm('댓글을 삭제하시겠습니까?')) {
-                // In real app, use a cloud function or proper security rules
-                // For now, assume client can delete if owner
+                try {
+                    await deleteDoc(doc(db, 'comments', id));
+                } catch (err) {
+                    alert('삭제 권한이 없거나 오류가 발생했습니다.');
+                }
             }
         };
     }
+
+    // Like listener
+    const likeBtn = div.querySelector('.btn-like');
+    likeBtn.onclick = async () => {
+        if (!currentUser) {
+            alert('로그인이 필요합니다.');
+            return;
+        }
+        const commentRef = doc(db, 'comments', id);
+        const hasLiked = data.likedBy?.includes(currentUser.uid);
+        
+        try {
+            await updateDoc(commentRef, {
+                likes: increment(hasLiked ? -1 : 1),
+                likedBy: hasLiked ? arrayRemove(currentUser.uid) : arrayUnion(currentUser.uid)
+            });
+        } catch (err) {
+            console.error(err);
+        }
+    };
 
     commentsList.appendChild(div);
 };

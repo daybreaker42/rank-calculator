@@ -1,4 +1,4 @@
-import { db, auth, query, where, collection, getDocs, addDoc, setDoc, orderBy, limit, serverTimestamp, doc, getDoc } from './firebase-config.js';
+import { db, auth, query, where, collection, getDocs, addDoc, setDoc, deleteDoc, orderBy, limit, serverTimestamp, doc, getDoc } from './firebase-config.js';
 import { observeAuthState } from './auth.js';
 
 const searchInput = document.getElementById('subject-search');
@@ -86,6 +86,14 @@ searchInput.addEventListener('input', (e) => {
     renderSearchResults(filtered, term);
 });
 
+searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const term = e.target.value.toLowerCase().trim();
+        if (!term) return;
+        window.location.href = `search.html?q=${encodeURIComponent(term)}`;
+    }
+});
+
 const renderSearchResults = (results, term) => {
     searchResults.innerHTML = '';
     searchResults.classList.remove('hidden');
@@ -155,9 +163,51 @@ addSubjectForm.onsubmit = async (e) => {
 };
 
 const loadFavorites = async () => {
-    // For now, let's just show a few recent ones or a mock
-    // In real implementation, fetch from 'favorites' collection
-    favoritesSection.classList.add('hidden'); // Simplified for now
+    if (!currentUser) return;
+    
+    try {
+        const q = query(
+            collection(db, 'favorites'),
+            where('userId', '==', currentUser.uid),
+            orderBy('timestamp', 'desc'),
+            limit(20)
+        );
+        const querySnapshot = await getDocs(q);
+        
+        favoritesList.innerHTML = '';
+        if (querySnapshot.empty) {
+            favoritesSection.classList.add('hidden');
+            return;
+        }
+
+        favoritesSection.classList.remove('hidden');
+        querySnapshot.forEach((doc) => {
+            const data = doc.data();
+            renderFavoriteCard(favoritesList, { id: data.subjectId, name: data.subjectName, code: data.subjectCode });
+        });
+    } catch (err) {
+        console.error("Error loading favorites:", err);
+    }
+};
+
+const renderFavoriteCard = (container, subject) => {
+    const card = document.createElement('a');
+    card.href = `subject.html?id=${subject.id}`;
+    card.className = 'flex-shrink-0 w-48 p-4 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-[#d2d2d7] dark:border-[#424245] hover:shadow-lg transition-all group';
+    card.innerHTML = `
+        <div class="flex flex-col h-full justify-between">
+            <div>
+                <span class="text-[10px] font-bold text-[#0071e3] uppercase tracking-wider">${subject.code}</span>
+                <h3 class="text-sm font-bold group-hover:text-[#0071e3] transition-colors line-clamp-2 mt-1">${subject.name}</h3>
+            </div>
+            <div class="flex items-center justify-end mt-4">
+                <svg class="w-4 h-4 text-[#d2d2d7] group-hover:text-[#0071e3] transition-all transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+            </div>
+        </div>
+    `;
+    container.appendChild(card);
 };
 
 // Hide search results on click outside
