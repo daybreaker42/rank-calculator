@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>등수 예측 - Rank Calc</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+        }
+    </script>
+    <link rel="stylesheet" href="./src/css/style.css">
+</head>
+<body class="bg-[#f5f5f7] dark:bg-black dark:text-[#f5f5f7] text-[#1d1d1f] min-h-screen flex flex-col transition-colors duration-200 font-sans">
+    <script type="module" src="./src/js/navbar.js"></script>
+
+    <main class="flex-grow flex flex-col items-center px-4 pt-24 pb-12">
+        <!-- Search Section -->
+        <div class="w-full max-w-4xl flex flex-col items-center mb-16 mt-8">
+            <h1 class="text-4xl sm:text-6xl font-bold tracking-tight mb-8 text-center bg-gradient-to-r from-[#1d1d1f] to-[#6e6e73] dark:from-white dark:to-[#86868b] bg-clip-text text-transparent">
+                과목을 검색해보세요.
+            </h1>
+            
+            <div class="w-full relative group">
+                <input type="text" id="subject-search" 
+                    placeholder="과목 코드, 이름 또는 교수명 입력..." 
+                    class="w-full px-8 py-5 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-[#d2d2d7] dark:border-[#424245] shadow-xl focus:ring-4 focus:ring-[#0071e3]/20 focus:border-[#0071e3] outline-none transition-all text-xl">
+                <div id="search-results" class="absolute top-full left-0 right-0 mt-2 bg-white dark:bg-[#1d1d1f] rounded-2xl border border-[#d2d2d7] dark:border-[#424245] shadow-2xl overflow-hidden hidden z-10">
+                    <!-- Results will be injected here -->
+                </div>
+            </div>
+            
+            <div class="mt-6 flex flex-wrap justify-center gap-2">
+                <span class="text-sm text-[#6e6e73] dark:text-gray-400">추천 검색어:</span>
+                <button class="text-sm font-medium text-[#0071e3] hover:underline" onclick="document.getElementById('subject-search').value='CS101'; document.getElementById('subject-search').dispatchEvent(new Event('input'))">CS101</button>
+                <button class="text-sm font-medium text-[#0071e3] hover:underline" onclick="document.getElementById('subject-search').value='알고리즘'; document.getElementById('subject-search').dispatchEvent(new Event('input'))">알고리즘</button>
+            </div>
+        </div>
+
+        <!-- Sections Container -->
+        <div class="w-full max-w-7xl px-4 space-y-16">
+            
+            <!-- Favorites Section (Hidden if not logged in or no favorites) -->
+            <section id="favorites-section" class="hidden">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">즐겨찾기한 과목</h2>
+                    <a href="#" class="text-[#0071e3] text-sm font-medium hover:underline">모두 보기</a>
+                </div>
+                <div class="relative overflow-x-auto pb-4 scrollbar-hide">
+                    <div id="favorites-list" class="flex gap-4">
+                        <!-- Favorite cards -->
+                    </div>
+                </div>
+            </section>
+
+            <!-- Popular/Recent Section -->
+            <section>
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold">인기 과목</h2>
+                </div>
+                <div id="popular-subjects" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <!-- Skeleton loaders -->
+                    <div class="animate-pulse bg-white dark:bg-[#1d1d1f] h-32 rounded-2xl border border-[#d2d2d7] dark:border-[#424245]"></div>
+                    <div class="animate-pulse bg-white dark:bg-[#1d1d1f] h-32 rounded-2xl border border-[#d2d2d7] dark:border-[#424245]"></div>
+                    <div class="animate-pulse bg-white dark:bg-[#1d1d1f] h-32 rounded-2xl border border-[#d2d2d7] dark:border-[#424245]"></div>
+                </div>
+            </section>
+
+        </div>
+    </main>
+
+    <!-- Modal for Adding Subject -->
+    <div id="add-subject-modal" class="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm hidden">
+        <div class="bg-white dark:bg-[#1d1d1f] w-full max-w-md rounded-3xl p-8 shadow-2xl border border-[#d2d2d7] dark:border-[#424245]">
+            <h2 class="text-2xl font-bold mb-6">새 과목 추가</h2>
+            <form id="add-subject-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium mb-1">과목 코드 (4자리)</label>
+                    <input type="text" id="new-subject-code" maxlength="4" required class="w-full px-4 py-2 rounded-xl border dark:bg-black dark:border-[#424245]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">과목명</label>
+                    <input type="text" id="new-subject-name" required class="w-full px-4 py-2 rounded-xl border dark:bg-black dark:border-[#424245]">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">교수명</label>
+                    <input type="text" id="new-subject-prof" required class="w-full px-4 py-2 rounded-xl border dark:bg-black dark:border-[#424245]">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1">연도</label>
+                        <input type="number" id="new-subject-year" value="2024" class="w-full px-4 py-2 rounded-xl border dark:bg-black dark:border-[#424245]">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1">학기</label>
+                        <select id="new-subject-semester" class="w-full px-4 py-2 rounded-xl border dark:bg-black dark:border-[#424245]">
+                            <option value="1학기">1학기</option>
+                            <option value="여름학기">여름학기</option>
+                            <option value="2학기" selected>2학기</option>
+                            <option value="겨울학기">겨울학기</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-4 mt-8">
+                    <button type="button" id="btn-close-modal" class="flex-1 px-4 py-2 rounded-full border border-[#d2d2d7] dark:border-[#424245]">취소</button>
+                    <button type="submit" class="flex-1 px-4 py-2 rounded-full bg-[#0071e3] text-white">추가하기</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <footer class="py-12 border-t border-[#d2d2d7] dark:border-[#424245] flex flex-col items-center">
+        <p class="text-[13px] text-[#6e6e73] dark:text-gray-400">© 2024 sjHan. All rights reserved.</p>
+    </footer>
+
+    <script type="module" src="./src/js/predictor.js"></script>
+</body>
+</html>

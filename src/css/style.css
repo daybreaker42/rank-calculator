@@ -65,3 +65,38 @@ html.dark input:focus {
 html.dark ::-webkit-scrollbar-thumb {
     background: #424245;
 }
+
+/* New Utilities */
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.glass-nav {
+    background: rgba(255, 255, 255, 0.72) !important;
+    backdrop-filter: saturate(180%) blur(20px) !important;
+    -webkit-backdrop-filter: saturate(180%) blur(20px) !important;
+}
+
+html.dark .glass-nav {
+    background: rgba(0, 0, 0, 0.72) !important;
+}
+
+.line-clamp-1 {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+@keyframes slideInUp {
+    from { transform: translateY(10px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+    animation: slideInUp 0.4s ease-out forwards;
+}
