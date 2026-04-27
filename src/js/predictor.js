@@ -23,6 +23,15 @@ observeAuthState((user) => {
     }
 });
 
+// Set current year as default for new subjects
+const initYearInput = () => {
+    const yearInput = document.getElementById('new-subject-year');
+    if (yearInput) {
+        yearInput.value = new Date().getFullYear();
+    }
+};
+initYearInput();
+
 const loadPopularSubjects = async () => {
     try {
         const q = query(collection(db, 'subjects'), orderBy('voteCount', 'desc'), limit(6));

@@ -97,3 +97,18 @@ if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') 
 observeAuthState((user) => {
     renderNavbar(user);
 });
+
+// Update all elements with class 'current-year'
+const updateCurrentYear = () => {
+    const currentYear = new Date().getFullYear();
+    document.querySelectorAll('.current-year').forEach(el => {
+        el.textContent = currentYear;
+    });
+};
+
+// Run after DOM is fully loaded
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateCurrentYear);
+} else {
+    updateCurrentYear();
+}
