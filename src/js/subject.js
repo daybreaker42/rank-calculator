@@ -84,9 +84,12 @@ const loadStatsData = async () => {
         
         if (statsSnap.exists()) {
             currentStats = statsSnap.data();
-            updateStatsUI();
-            renderChart();
+        } else {
+            // Handle missing stats (e.g. due to subject creation bug)
+            currentStats = { count: 0, sum: 0, min: null, max: null, histogram: {} };
         }
+        updateStatsUI();
+        renderChart();
     } catch (err) {
         console.error("Stats access denied or error:", err);
         lockedOverlay.classList.remove('hidden');
@@ -243,11 +246,23 @@ scoreForm.onsubmit = async (e) => {
         // Since we can't easily calculate true min/max with increment, 
         // we update if current score is more extreme.
         const statsSnap = await getDoc(statsRef);
-        const statsData = statsSnap.data();
-        if (!statsData.min || minScore < statsData.min) statsUpdates.min = minScore;
-        if (!statsData.max || maxScore > statsData.max) statsUpdates.max = maxScore;
-
-        await updateDoc(statsRef, statsUpdates);
+        
+        if (statsSnap.exists()) {
+            const statsData = statsSnap.data();
+            if (!statsData.min || minScore < statsData.min) statsUpdates.min = minScore;
+            if (!statsData.max || maxScore > statsData.max) statsUpdates.max = maxScore;
+            await updateDoc(statsRef, statsUpdates);
+        } else {
+            // Initialize if missing
+            const initialStats = {
+                count: 1,
+                sum: score,
+                min: minScore,
+                max: maxScore,
+                histogram: { [bucket]: 1 }
+            };
+            await setDoc(statsRef, initialStats);
+        }
         
         // Update main subject doc for popularity
         if (!isUpdate) {

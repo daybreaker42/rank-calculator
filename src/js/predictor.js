@@ -1,4 +1,4 @@
-import { db, auth, query, where, collection, getDocs, addDoc, orderBy, limit, serverTimestamp, doc, getDoc } from './firebase-config.js';
+import { db, auth, query, where, collection, getDocs, addDoc, setDoc, orderBy, limit, serverTimestamp, doc, getDoc } from './firebase-config.js';
 import { observeAuthState } from './auth.js';
 
 const searchInput = document.getElementById('subject-search');
