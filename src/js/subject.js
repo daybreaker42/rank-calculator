@@ -226,7 +226,19 @@ scoreForm.onsubmit = async (e) => {
     try {
         const isUpdate = !!userVote;
         
-        // Update stats in the sub-collection doc
+        // 1. Save/Update vote FIRST
+        // This is critical because security rules only allow reading stats if a vote exists
+        await setDoc(voteRef, {
+            userId: currentUser.uid,
+            subjectId,
+            type: currentTab,
+            score,
+            minScore,
+            maxScore,
+            timestamp: serverTimestamp()
+        });
+
+        // 2. Update stats in the sub-collection doc
         const statsRef = doc(db, 'subjects', subjectId, 'stats', currentTab);
         
         const statsUpdates = {
@@ -253,7 +265,7 @@ scoreForm.onsubmit = async (e) => {
             if (!statsData.max || maxScore > statsData.max) statsUpdates.max = maxScore;
             await updateDoc(statsRef, statsUpdates);
         } else {
-            // Initialize if missing
+            // Initialize if missing (e.g. due to previous subject creation bug)
             const initialStats = {
                 count: 1,
                 sum: score,
@@ -264,23 +276,12 @@ scoreForm.onsubmit = async (e) => {
             await setDoc(statsRef, initialStats);
         }
         
-        // Update main subject doc for popularity
+        // 3. Update main subject doc for popularity
         if (!isUpdate) {
             await updateDoc(doc(db, 'subjects', subjectId), {
                 voteCount: increment(1)
             });
         }
-        
-        // Save/Update vote
-        await setDoc(voteRef, {
-            userId: currentUser.uid,
-            subjectId,
-            type: currentTab,
-            score,
-            minScore,
-            maxScore,
-            timestamp: serverTimestamp()
-        });
 
         scoreModal.classList.add('hidden');
         await checkUserVote();
