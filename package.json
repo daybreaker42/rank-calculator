@@ -1,0 +1,31 @@
+{
+  "name": "41_rank-calculator",
+  "version": "1.0.0",
+  "description": "![License](https://img.shields.io/badge/license-MIT-blue.svg) ![Version](https://img.shields.io/badge/version-1.1.0-green.svg) ![Status](https://img.shields.io/badge/status-active-brightgreen.svg)",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "build:css": "tailwindcss -i ./src/css/input.css -o ./src/css/style.css --minify",
+    "watch:css": "tailwindcss -i ./src/css/input.css -o ./src/css/style.css --watch"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/daybreaker42/rank-calculator.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/daybreaker42/rank-calculator/issues"
+  },
+  "homepage": "https://github.com/daybreaker42/rank-calculator#readme",
+  "devDependencies": {
+    "@tailwindcss/cli": "^4.2.4",
+    "autoprefixer": "^10.5.0",
+    "postcss": "^8.5.12",
+    "tailwindcss": "^4.2.4"
+  }
+}
