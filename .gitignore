@@ -1,2 +1,6 @@
 data-examples/
 node_modules/
+.agents/
+.claude/
+.continue/
+.qwen/
