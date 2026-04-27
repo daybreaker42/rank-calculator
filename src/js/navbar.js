@@ -1,4 +1,4 @@
-import { loginWithGoogle, logout, observeAuthState } from './auth.js';
+import { loginWithGoogle, loginWithGoogleRedirect, handleRedirectResult, logout, observeAuthState } from './auth.js';
 
 const renderNavbar = (user) => {
     const nav = document.createElement('nav');
@@ -76,7 +76,16 @@ const renderNavbar = (user) => {
     const loginBtn = nav.querySelector('#btn-login');
     if (loginBtn) {
         loginBtn.onclick = async () => {
-            try { await loginWithGoogle(); } catch (err) { alert('로그인에 실패했습니다.'); }
+            try { 
+                await loginWithGoogle(); 
+            } catch (err) { 
+                console.error('Popup login failed, trying redirect:', err);
+                try {
+                    await loginWithGoogleRedirect();
+                } catch (reErr) {
+                    alert('로그인에 실패했습니다. 팝업 차단 여부를 확인하거나 다른 브라우저를 사용해주세요.'); 
+                }
+            }
         };
     }
 
@@ -94,7 +103,18 @@ if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') 
 }
 
 // Initialize
-observeAuthState((user) => {
+observeAuthState(async (user) => {
+    if (!user) {
+        try {
+            const redirectUser = await handleRedirectResult();
+            if (redirectUser) {
+                renderNavbar(redirectUser);
+                return;
+            }
+        } catch (err) {
+            console.error("Redirect result error:", err);
+        }
+    }
     renderNavbar(user);
 });
 

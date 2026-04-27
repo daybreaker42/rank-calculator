@@ -19,5 +19,24 @@
         "npm --prefix functions run lint"
       ]
     }
-  ]
+  ],
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "/**",
+        "headers": [
+          {
+            "key": "Cross-Origin-Opener-Policy",
+            "value": "same-origin-allow-popups"
+          }
+        ]
+      }
+    ]
+  }
 }

@@ -12,7 +12,7 @@ const firebaseConfig = {
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, addDoc, serverTimestamp, increment, arrayUnion, arrayRemove, orderBy, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
 
 // Initialize Firebase
@@ -28,6 +28,8 @@ export {
     analytics,
     googleProvider, 
     signInWithPopup, 
+    signInWithRedirect,
+    getRedirectResult,
     signOut, 
     onAuthStateChanged,
     doc, getDoc, setDoc, updateDoc, deleteDoc, collection, query, where, getDocs, addDoc, serverTimestamp, increment, arrayUnion, arrayRemove, orderBy, limit, onSnapshot
