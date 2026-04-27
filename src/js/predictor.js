@@ -15,11 +15,11 @@ let currentUser = null;
 // Initialize
 observeAuthState((user) => {
     currentUser = user;
-    loadPopularSubjects();
+    if (popularList) loadPopularSubjects();
     if (user) {
-        loadFavorites();
+        if (favoritesSection) loadFavorites();
     } else {
-        favoritesSection.classList.add('hidden');
+        if (favoritesSection) favoritesSection.classList.add('hidden');
     }
 });
 
@@ -32,7 +32,8 @@ const initYearInput = () => {
 };
 initYearInput();
 
-const loadPopularSubjects = async () => {
+async function loadPopularSubjects() {
+    if (!popularList) return;
     try {
         const q = query(collection(db, 'subjects'), orderBy('voteCount', 'desc'), limit(6));
         const querySnapshot = await getDocs(q);
@@ -53,9 +54,9 @@ const loadPopularSubjects = async () => {
     } catch (err) {
         console.error("Error loading subjects:", err);
     }
-};
+}
 
-const renderSubjectCard = (container, subject) => {
+function renderSubjectCard(container, subject) {
     const card = document.createElement('a');
     card.href = `subject.html?id=${subject.id}`;
     card.className = 'group p-6 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-[#d2d2d7] dark:border-[#424245] hover:shadow-xl transition-all flex flex-col justify-between h-40';
@@ -76,34 +77,37 @@ const renderSubjectCard = (container, subject) => {
         </div>
     `;
     container.appendChild(card);
-};
+}
 
 // Search Logic
-searchInput.addEventListener('input', (e) => {
-    const term = e.target.value.toLowerCase().trim();
-    if (!term) {
-        searchResults.classList.add('hidden');
-        return;
-    }
-
-    const filtered = allSubjects.filter(s => 
-        s.code.toLowerCase().includes(term) || 
-        s.name.toLowerCase().includes(term) || 
-        s.professor.toLowerCase().includes(term)
-    ).slice(0, 5);
-
-    renderSearchResults(filtered, term);
-});
-
-searchInput.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
+if (searchInput && searchResults) {
+    searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase().trim();
-        if (!term) return;
-        window.location.href = `search.html?q=${encodeURIComponent(term)}`;
-    }
-});
+        if (!term) {
+            searchResults.classList.add('hidden');
+            return;
+        }
 
-const renderSearchResults = (results, term) => {
+        const filtered = allSubjects.filter(s => 
+            s.code.toLowerCase().includes(term) || 
+            s.name.toLowerCase().includes(term) || 
+            s.professor.toLowerCase().includes(term)
+        ).slice(0, 5);
+
+        renderSearchResults(filtered, term);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            const term = e.target.value.toLowerCase().trim();
+            if (!term) return;
+            window.location.href = `search.html?q=${encodeURIComponent(term)}`;
+        }
+    });
+}
+
+function renderSearchResults(results, term) {
+    if (!searchResults) return;
     searchResults.innerHTML = '';
     searchResults.classList.remove('hidden');
 
@@ -132,42 +136,49 @@ const renderSearchResults = (results, term) => {
             alert('로그인이 필요한 기능입니다.');
             return;
         }
-        addSubjectModal.classList.remove('hidden');
-        document.getElementById('new-subject-name').value = term;
+        if (addSubjectModal) {
+            addSubjectModal.classList.remove('hidden');
+            const nameInput = document.getElementById('new-subject-name');
+            if (nameInput) nameInput.value = term;
+        }
     };
     searchResults.appendChild(addNew);
-};
+}
 
 // Close modal
-document.getElementById('btn-close-modal').onclick = () => addSubjectModal.classList.add('hidden');
+const closeModalBtn = document.getElementById('btn-close-modal');
+if (closeModalBtn && addSubjectModal) {
+    closeModalBtn.onclick = () => addSubjectModal.classList.add('hidden');
+}
 
 // Add Subject
-addSubjectForm.onsubmit = async (e) => {
-    e.preventDefault();
-    const code = document.getElementById('new-subject-code').value.toUpperCase();
-    const name = document.getElementById('new-subject-name').value;
-    const professor = document.getElementById('new-subject-prof').value;
-    const year = parseInt(document.getElementById('new-subject-year').value);
-    const semester = document.getElementById('new-subject-semester').value;
+if (addSubjectForm) {
+    addSubjectForm.onsubmit = async (e) => {
+        e.preventDefault();
+        const code = document.getElementById('new-subject-code').value.toUpperCase();
+        const name = document.getElementById('new-subject-name').value;
+        const professor = document.getElementById('new-subject-prof').value;
+        const year = parseInt(document.getElementById('new-subject-year').value);
+        const semester = document.getElementById('new-subject-semester').value;
 
-    try {
-        // 1. Create main subject doc
-        const subjectRef = await addDoc(collection(db, 'subjects'), {
-            code, name, professor, year, semester,
-            voteCount: 0,
-            createdAt: serverTimestamp(),
-            commentCounters: { midterm: 0, final: 0 }
-        });
+        try {
+            const subjectRef = await addDoc(collection(db, 'subjects'), {
+                code, name, professor, year, semester,
+                voteCount: 0,
+                createdAt: serverTimestamp(),
+                commentCounters: { midterm: 0, final: 0 }
+            });
 
-        window.location.href = `subject.html?id=${subjectRef.id}`;
-    } catch (err) {
-        console.error(err);
-        alert('과목 추가에 실패했습니다.');
-    }
-};
+            window.location.href = `subject.html?id=${subjectRef.id}`;
+        } catch (err) {
+            console.error(err);
+            alert('과목 추가에 실패했습니다.');
+        }
+    };
+}
 
-const loadFavorites = async () => {
-    if (!currentUser) return;
+async function loadFavorites() {
+    if (!currentUser || !favoritesList) return;
     
     try {
         const q = query(
@@ -180,11 +191,11 @@ const loadFavorites = async () => {
         
         favoritesList.innerHTML = '';
         if (querySnapshot.empty) {
-            favoritesSection.classList.add('hidden');
+            if (favoritesSection) favoritesSection.classList.add('hidden');
             return;
         }
 
-        favoritesSection.classList.remove('hidden');
+        if (favoritesSection) favoritesSection.classList.remove('hidden');
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             renderFavoriteCard(favoritesList, { id: data.subjectId, name: data.subjectName, code: data.subjectCode });
@@ -192,9 +203,9 @@ const loadFavorites = async () => {
     } catch (err) {
         console.error("Error loading favorites:", err);
     }
-};
+}
 
-const renderFavoriteCard = (container, subject) => {
+function renderFavoriteCard(container, subject) {
     const card = document.createElement('a');
     card.href = `subject.html?id=${subject.id}`;
     card.className = 'flex-shrink-0 w-48 p-4 rounded-2xl bg-white dark:bg-[#1d1d1f] border border-[#d2d2d7] dark:border-[#424245] hover:shadow-lg transition-all group';
@@ -212,11 +223,11 @@ const renderFavoriteCard = (container, subject) => {
         </div>
     `;
     container.appendChild(card);
-};
+}
 
 // Hide search results on click outside
 document.addEventListener('click', (e) => {
-    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+    if (searchInput && searchResults && !searchInput.contains(e.target) && !searchResults.contains(e.target)) {
         searchResults.classList.add('hidden');
     }
 });
